@@ -16,7 +16,7 @@ public class ReservationTest {
      */
     @Before
     public void init() {
-        reservation = new Reservation(5, 12, 156, new Point(5, 6));
+        reservation = new Reservation(5, 12, 156, 987);
     }
 
     /*
@@ -27,23 +27,28 @@ public class ReservationTest {
         assertEquals(5, reservation.getStartTime());
         assertEquals(12, reservation.getEndTime());
         assertEquals(156, reservation.getAgvId());
-        assertEquals(new Point(5, 6), reservation.getDestination());
+        assertEquals(987, reservation.getDestinationId());
         assertEquals(Reservation.getLifeTime(), reservation.getTimeToLive());
     }
 
     @Test (expected = IllegalArgumentException.class)
     public void invalidStartTime() {
-        Reservation reservation = new Reservation(-2, 12, 156, new Point(5, 6));
+        new Reservation(-2, 12, 156, 987);
     }
 
     @Test (expected = IllegalArgumentException.class)
     public void invalidEndTime() {
-        Reservation reservation = new Reservation(5, 5, 156, new Point(5, 6));
+        new Reservation(5, 5, 156, 987);
     }
 
     @Test (expected = IllegalArgumentException.class)
     public void invalidAgvId() {
-        Reservation reservation = new Reservation(5, 12, -156, new Point(5, 6));
+        new Reservation(5, 12, -156, 987);
+    }
+
+    @Test (expected = IllegalArgumentException.class)
+    public void invalidDestinationId() {
+        new Reservation(5, 12, 156, -2);
     }
 
     /*
@@ -51,10 +56,10 @@ public class ReservationTest {
      */
     @Test
     public void overlap() {
-        Reservation res1 = new Reservation(5, 12, 156, new Point(5, 6));
-        Reservation res2 = new Reservation(6, 11, 178, new Point(7, 8));
-        Reservation res3 = new Reservation (4, 8, 456, new Point(8, 9));
-        Reservation res4 = new Reservation(1, 5, 123, new Point(4, 5));
+        Reservation res1 = new Reservation(5, 12, 156, 987);
+        Reservation res2 = new Reservation(6, 11, 178, 654);
+        Reservation res3 = new Reservation (4, 8, 456, 852);
+        Reservation res4 = new Reservation(1, 5, 123, 963);
 
         assert(res1.overlap(res2));
         assert(res2.overlap(res1));
@@ -66,9 +71,9 @@ public class ReservationTest {
 
     @Test
     public void noOverlap() {
-        Reservation res1  = new Reservation(5, 12, 156, new Point(5, 6));
-        Reservation res2 = new Reservation(1, 4, 178, new Point(7, 8));
-        Reservation res3 = new Reservation (13, 16, 456, new Point(8, 9));
+        Reservation res1  = new Reservation(5, 12, 156, 987);
+        Reservation res2 = new Reservation(1, 4, 178, 654);
+        Reservation res3 = new Reservation (13, 16, 456, 321);
 
         assertFalse(res1.overlap(res2));
         assertFalse(res2.overlap(res1));
@@ -93,7 +98,7 @@ public class ReservationTest {
     }
 
     @Test
-    public void fallsWithinOhter() {
+    public void fallsWithinOther() {
         assert(reservation.fallsWithinOther(4, 13));
         assert(reservation.fallsWithinOther(5, 13));
         assert(reservation.fallsWithinOther(4, 12));
@@ -115,7 +120,7 @@ public class ReservationTest {
     }
 
     @Test
-    public void noRightOverlapWithOtehr() {
+    public void noRightOverlapWithOther() {
         assertFalse(reservation.rightOverlapWithOther(6, 11));
         assertFalse(reservation.rightOverlapWithOther(4, 13));
         assertFalse(reservation.rightOverlapWithOther(2, 4));
@@ -145,9 +150,9 @@ public class ReservationTest {
     @Test
      public void agvId() {
 
-        Reservation res1  = new Reservation(5, 12, 156, new Point(5, 6));
-        Reservation res2 = new Reservation(1, 4, 156, new Point(7, 8));
-        Reservation res3 = new Reservation (13, 16, 456, new Point(8, 9));
+        Reservation res1  = new Reservation(5, 12, 156, 987);
+        Reservation res2 = new Reservation(1, 4, 156, 654);
+        Reservation res3 = new Reservation (13, 16, 456, 321);
 
         assert(res1.hasEqualAgvId(res2));
         assert(res2.hasEqualAgvId(res1));
@@ -163,44 +168,57 @@ public class ReservationTest {
     }
 
     /*
-    Evaporate
+    Destination ID
+     */
+    @Test
+    public void matchingDestination() {
+        Reservation reservation = new Reservation(2, 5, 123, 987);
+
+        assert(reservation.matchingDestination(987));
+        assertFalse(reservation.matchingDestination(321));
+    }
+
+    /*
+    Time to life
      */
     @Test
     public void evaporation() {
-        Reservation res1  = new Reservation(2, 3, 156, new Point(5, 6));
-
+        Reservation.setLifeTime(4);
+        Reservation res1  = new Reservation(2, 3, 156, 987);
         assertEquals(Reservation.getLifeTime(), res1.getTimeToLive());
+        assertEquals(2, res1.getStartTime());
+        assertEquals(3, res1.getEndTime());
+        assert(res1.hasTimeToLive());
+
         res1.evaporate();
         assertEquals(Reservation.getLifeTime() - 1, res1.getTimeToLive());
+        assertEquals(2, res1.getStartTime());
+        assertEquals(3, res1.getEndTime());
+        assert(res1.hasTimeToLive());
+
+
         res1.evaporate();
         assertEquals(Reservation.getLifeTime() - 2, res1.getTimeToLive());
-    }
-
-    @Test (expected = IllegalStateException.class)
-    public void evaporationIllegalEndTime() {
-        Reservation res1  = new Reservation(1, 2, 156, new Point(5, 6));
-
-        res1.evaporate();
-        res1.evaporate();
-        res1.evaporate();
+        assertEquals(2, res1.getStartTime());
+        assertEquals(3, res1.getEndTime());
+        assert(res1.hasTimeToLive());
     }
 
     @Test (expected = IllegalStateException.class)
     public void evaporationIllegalLifeTime() {
-        Reservation res1  = new Reservation(1, Reservation.getLifeTime() + 2, 156, new Point(5, 6));
+        Reservation res1  = new Reservation(1, Reservation.getLifeTime() + 2, 156, 987);
 
-        for (int i=0; i <= Reservation.getLifeTime(); i++) {
+        for (int i=0; i < Reservation.getLifeTime(); i++) {
+            assert(res1.hasTimeToLive());
             res1.evaporate();
         }
+        assertFalse(res1.hasTimeToLive());
+        res1.evaporate();
     }
 
-
-    /*
-    Refresh
-     */
     @Test
     public void refresh() {
-        Reservation res1  = new Reservation(5, 12, 156, new Point(5, 6));
+        Reservation res1  = new Reservation(5, 12, 156, 987);
 
         assertEquals(Reservation.getLifeTime(), res1.getTimeToLive());
         res1.evaporate();
@@ -216,9 +234,8 @@ public class ReservationTest {
      */
     @Test
     public void toStringTest() {
-        Point point = new Point(5, 6);
-        Reservation res1  = new Reservation(5, 12, 156, point);
-        assertEquals("Reservation: start - 5, end - 12, agv ID - 156, destination - " + point.toString(),
+        Reservation res1  = new Reservation(5, 12, 156, 987);
+        assertEquals("Reservation: start - 5, end - 12, agv ID - 156, destination ID - " + 987,
                 res1.toString());
     }
 
@@ -227,10 +244,10 @@ public class ReservationTest {
      */
     @Test
     public void testCompareTo() {
-        Reservation res1  = new Reservation(5, 12, 156, new Point(5, 6));
-        Reservation res2  = new Reservation(5, 12, 145, new Point(3, 2));
-        Reservation res3  = new Reservation(2, 12, 156, new Point(5, 6));
-        Reservation res4  = new Reservation(5, 13, 156, new Point(5, 6));
+        Reservation res1  = new Reservation(5, 12, 156, 987);
+        Reservation res2  = new Reservation(5, 12, 145, 654);
+        Reservation res3  = new Reservation(2, 12, 156, 987);
+        Reservation res4  = new Reservation(5, 13, 156, 987);
 
         assertEquals(0, res1.compareTo(res2));
         assertEquals(0, res2.compareTo(res1));

@@ -22,19 +22,19 @@ public class ScheduleTest {
     public void init() {
         schedule1 = new Schedule();
         schedule1.addReservation(
-                7, 9, 123, new Point(5, 6)
+                7, 9, 123, 987
         );
         schedule1.addReservation(
-                10, 14, 456, new Point(5, 6)
+                10, 14, 456, 987
         );
         schedule1.addReservation(
-                13, 16, 789, new Point(5, 6)
+                13, 16, 789, 987
         );
         schedule1.addReservation(
-                4, 6, 369, new Point(5, 6)
+                4, 6, 369, 987
         );
         schedule1.addReservation(
-                19, 21, 369, new Point(5, 6)
+                19, 21, 369, 987
         );
     }
 
@@ -101,9 +101,9 @@ public class ScheduleTest {
 
     @Test
     public void findMaxEnd() {
-        Reservation res1 = new Reservation(5, 12, 145, new Point(4, 5));
-        Reservation res2 = new Reservation(6, 11, 789, new Point(8, 9));
-        Reservation res3 = new Reservation(2, 19, 321, new Point(8, 2));
+        Reservation res1 = new Reservation(5, 12, 145, 654);
+        Reservation res2 = new Reservation(6, 11, 789, 321);
+        Reservation res3 = new Reservation(2, 19, 321, 852);
         List<Reservation> resList = new ArrayList<>();
 
         resList.add(res1);
@@ -124,9 +124,9 @@ public class ScheduleTest {
 
     @Test
     public void findMinStart() {
-        Reservation res1 = new Reservation(5, 12, 145, new Point(4, 5));
-        Reservation res2 = new Reservation(6, 11, 789, new Point(8, 9));
-        Reservation res3 = new Reservation(2, 19, 321, new Point(8, 2));
+        Reservation res1 = new Reservation(5, 12, 145, 654);
+        Reservation res2 = new Reservation(6, 11, 789, 321);
+        Reservation res3 = new Reservation(2, 19, 321, 852);
         List<Reservation> resList = new ArrayList<>();
 
         resList.add(res1);
@@ -143,5 +143,46 @@ public class ScheduleTest {
     public void findMinStartEmptyList() {
         List<Reservation> resList = new ArrayList<>();
         Schedule.findMinStart(resList);
+    }
+
+    /*
+    Evaporation
+     */
+    @Test
+    public void testEvaporation() {
+        for (int i=1; i<Reservation.getLifeTime(); i++) {
+            schedule1.evaporate();
+            assertEquals(5, schedule1.getNbOfReservations());
+        }
+
+        schedule1.evaporate();
+        assertEquals(0, schedule1.getNbOfReservations());
+    }
+
+    @Test
+    public void testAdvanceTime() {
+        schedule1.addReservation(0, 1, 123, 987);
+        assertEquals(6, schedule1.getNbOfReservations());
+
+        schedule1.advanceTime(1);
+        assertEquals(6, schedule1.getNbOfReservations());
+
+        schedule1.advanceTime(2);
+        assertEquals(5, schedule1.getNbOfReservations());
+
+        schedule1.advanceTime(3);
+        assertEquals(5, schedule1.getNbOfReservations());
+
+        schedule1.advanceTime(4);
+        assertEquals(5, schedule1.getNbOfReservations());
+
+        schedule1.advanceTime(5);
+        assertEquals(5, schedule1.getNbOfReservations());
+
+        schedule1.advanceTime(6);
+        assertEquals(5, schedule1.getNbOfReservations());
+
+        schedule1.advanceTime(7);
+        assertEquals(4, schedule1.getNbOfReservations());
     }
 }

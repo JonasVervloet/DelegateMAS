@@ -44,6 +44,16 @@ public class ResourceMap {
     /*
     Resource Entries
      */
+    public List<ResourceEntry> getResourceEntriesForNeighborId(int neighborId)
+            throws IllegalArgumentException {
+        if (! isValidNeighborId(neighborId)) {
+            throw new IllegalArgumentException(
+                    "RESOURCE MAP | GIVEN NEIGHBOR ID IS NOT A VALID ONE"
+            );
+        }
+        return resourceMap.get(neighborId);
+    }
+
     public void addResourceEntry(int neighborId, int resourceId, int distance)
             throws IllegalArgumentException {
         if (! isValidNeighborId(neighborId)) {
@@ -67,13 +77,20 @@ public class ResourceMap {
         }
     }
 
-    public List<ResourceEntry> getResourceEntryForNeighborId(int neighborId)
-            throws IllegalArgumentException {
-        if (! isValidNeighborId(neighborId)) {
-            throw new IllegalArgumentException(
-                    "RESOURCE MAP | GIVEN NEIGHBOR ID IS NOT A VALID ONE"
-            );
+    /*
+    Evaporation
+     */
+    public void evaporate() {
+        for (List<ResourceEntry> list: resourceMap.values()) {
+            List<ResourceEntry> toRemove = new ArrayList<>();
+            for (ResourceEntry entry: list) {
+                entry.evaporate();
+                if (entry.isDone()) {
+                    toRemove.add(entry);
+                }
+            }
+
+            list.removeAll(toRemove);
         }
-        return resourceMap.get(neighborId);
     }
 }

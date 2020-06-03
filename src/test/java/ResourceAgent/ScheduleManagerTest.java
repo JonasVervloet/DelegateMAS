@@ -1,7 +1,6 @@
 package ResourceAgent;
 
 import ResourceAgent.Schedule.*;
-import com.github.rinde.rinsim.geom.Point;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -13,7 +12,6 @@ public class ScheduleManagerTest {
 
     ScheduleManager manager1;
     ScheduleManager manager2;
-    Point destination;
     ScheduleRequest request;
 
     /*
@@ -23,9 +21,8 @@ public class ScheduleManagerTest {
     public void init() {
         manager1 = new ScheduleManager(5, 3);
         manager2 = new ScheduleManager(2, 3);
-        destination = new Point(5, 6);
         request = new ScheduleRequest(
-                5, 20, 145, destination
+                5, 20, 145, 987
         );
     }
 
@@ -54,9 +51,9 @@ public class ScheduleManagerTest {
     @Test
     public void isValidToRegister() {
         assertFalse(manager1.isValidToRegister(123));
-        manager1.makeReservation(new ScheduleRequest(5,  9,  123, destination));
+        manager1.makeReservation(new ScheduleRequest(5,  9,  123, 987));
         assertFalse(manager1.isValidToRegister(123));
-        manager1.makeReservation(new ScheduleRequest(0, 4, 123, destination));
+        manager1.makeReservation(new ScheduleRequest(0, 4, 123, 987));
         assertTrue(manager1.isValidToRegister(123));
     }
 
@@ -66,10 +63,10 @@ public class ScheduleManagerTest {
     @Test
     public void possibleReservationsEmptyInInterval() {
         manager1.makeReservation(
-                new ScheduleRequest(1, 3, 123, destination)
+                new ScheduleRequest(1, 3, 123, 987)
         );
         manager1.makeReservation(
-                new ScheduleRequest(21, 26, 789, destination)
+                new ScheduleRequest(21, 26, 789, 987)
         );
         List<PossibleReservation> possRes =
                 manager1.getPossibleReservations(request);
@@ -85,7 +82,7 @@ public class ScheduleManagerTest {
     @Test
     public void possibleReservationsSpan() {
         manager1.makeReservation(
-                new ScheduleRequest(3, 23, 123, destination)
+                new ScheduleRequest(3, 23, 123, 987)
         );
 
         List<PossibleReservation> possRes =
@@ -96,13 +93,13 @@ public class ScheduleManagerTest {
     @Test
     public void possibleReservationsOnlyLeftOverlap() {
         manager1.makeReservation(
-                new ScheduleRequest(1, 5, 123, destination)
+                new ScheduleRequest(1, 5, 123, 987)
         );
         manager1.makeReservation(
-                new ScheduleRequest(3, 6, 789, destination)
+                new ScheduleRequest(3, 6, 789, 987)
         );
         manager1.makeReservation(
-                new ScheduleRequest(4, 8, 654, destination)
+                new ScheduleRequest(4, 8, 654, 987)
         );
 
         List<PossibleReservation> possRes =
@@ -119,13 +116,13 @@ public class ScheduleManagerTest {
     @Test
     public void possibleReservationsOnlyRightOverlap() {
         manager1.makeReservation(
-                new ScheduleRequest(16, 21, 123, destination)
+                new ScheduleRequest(16, 21, 123, 987)
         );
         manager1.makeReservation(
-                new ScheduleRequest(18, 23, 789, destination)
+                new ScheduleRequest(18, 23, 789, 987)
         );
         manager1.makeReservation(
-                new ScheduleRequest(20, 24, 654, destination)
+                new ScheduleRequest(20, 24, 654, 987)
         );
 
         List<PossibleReservation> possRes =
@@ -142,13 +139,13 @@ public class ScheduleManagerTest {
     @Test
     public void possibleReservationsOnlyWithin() {
         manager1.makeReservation(
-                new ScheduleRequest(8, 12, 123, destination)
+                new ScheduleRequest(8, 12, 123, 987)
         );
         manager1.makeReservation(
-                new ScheduleRequest(10, 14, 789, destination)
+                new ScheduleRequest(10, 14, 789, 987)
         );
         manager1.makeReservation(
-                new ScheduleRequest(14, 17, 654, destination)
+                new ScheduleRequest(14, 17, 654, 987)
         );
         List<PossibleReservation> possRes =
                 manager1.getPossibleReservations(request);
@@ -182,10 +179,10 @@ public class ScheduleManagerTest {
     @Test
     public void possibleReservationsLeftAndRightOverlap() {
         manager1.makeReservation(
-                new ScheduleRequest(2, 7, 123, destination)
+                new ScheduleRequest(2, 7, 123, 987)
         );
         manager1.makeReservation(
-                new ScheduleRequest(17, 24, 654, destination)
+                new ScheduleRequest(17, 24, 654, 987)
         );
 
         List<PossibleReservation> possRes =
@@ -202,13 +199,13 @@ public class ScheduleManagerTest {
     @Test
     public void possibleReservationsLeftOverlapAndWithin() {
         manager1.makeReservation(
-                new ScheduleRequest(2, 7, 123, destination)
+                new ScheduleRequest(2, 7, 123, 987)
         );
         manager1.makeReservation(
-                new ScheduleRequest(8, 12, 789, destination)
+                new ScheduleRequest(8, 12, 789, 987)
         );
         manager1.makeReservation(
-                new ScheduleRequest(10, 14, 654, destination)
+                new ScheduleRequest(10, 14, 654, 987)
         );
 
         List<PossibleReservation> possRes =
@@ -237,13 +234,13 @@ public class ScheduleManagerTest {
     @Test
     public void possibleReservationsRightOverlapAndWithin() {
         manager1.makeReservation(
-                new ScheduleRequest(16, 24, 123, destination)
+                new ScheduleRequest(16, 24, 123, 987)
         );
         manager1.makeReservation(
-                new ScheduleRequest(8, 12, 789, destination)
+                new ScheduleRequest(8, 12, 789, 987)
         );
         manager1.makeReservation(
-                new ScheduleRequest(14, 17, 654, destination)
+                new ScheduleRequest(14, 17, 654, 987)
         );
 
         List<PossibleReservation> possRes =
@@ -272,16 +269,16 @@ public class ScheduleManagerTest {
     @Test
     public void possibleReservationsAll() {
         manager1.makeReservation(
-                new ScheduleRequest(2, 7, 123, destination)
+                new ScheduleRequest(2, 7, 123, 987)
         );
         manager1.makeReservation(
-                new ScheduleRequest(8, 12, 789, destination)
+                new ScheduleRequest(8, 12, 789, 987)
         );
         manager1.makeReservation(
-                new ScheduleRequest(10, 14, 654, destination)
+                new ScheduleRequest(10, 14, 654, 987)
         );
         manager1.makeReservation(
-                new ScheduleRequest(16, 24, 123, destination)
+                new ScheduleRequest(16, 24, 123, 987)
         );
 
         List<PossibleReservation> possRes =
@@ -310,10 +307,10 @@ public class ScheduleManagerTest {
     @Test
     public void possibleReservationsInvalidArrivalInterval() {
         manager1.makeReservation(
-                new ScheduleRequest(8, 10, 123, destination)
+                new ScheduleRequest(8, 10, 123, 987)
         );
         manager1.makeReservation(
-                new ScheduleRequest(9, 12, 789, destination)
+                new ScheduleRequest(9, 12, 789, 987)
         );
 
         List<PossibleReservation> possRes =
@@ -336,10 +333,10 @@ public class ScheduleManagerTest {
     @Test
     public void possibleReservationsInvalidDepartureInterval() {
         manager1.makeReservation(
-                new ScheduleRequest(8, 11, 123, destination)
+                new ScheduleRequest(8, 11, 123, 987)
         );
         manager1.makeReservation(
-                new ScheduleRequest(10, 12, 789, destination)
+                new ScheduleRequest(10, 12, 789, 987)
         );
 
         List<PossibleReservation> possRes =
@@ -362,10 +359,10 @@ public class ScheduleManagerTest {
     @Test
     public void possibleReservationsInvalidIntervals() {
         manager1.makeReservation(
-                new ScheduleRequest(8, 11, 123, destination)
+                new ScheduleRequest(8, 11, 123, 987)
         );
         manager1.makeReservation(
-                new ScheduleRequest(9, 12, 789, destination)
+                new ScheduleRequest(9, 12, 789, 987)
         );
 
         List<PossibleReservation> possRes =
@@ -388,10 +385,10 @@ public class ScheduleManagerTest {
     @Test
     public void possibleReservationsCapacityOverflow() {
         manager2.makeReservation(
-                new ScheduleRequest(9, 12, 123, destination)
+                new ScheduleRequest(9, 12, 123, 987)
         );
         manager2.makeReservation(
-                new ScheduleRequest(11, 14, 789, destination)
+                new ScheduleRequest(11, 14, 789, 987)
         );
 
         List<PossibleReservation> possRes =
@@ -414,19 +411,19 @@ public class ScheduleManagerTest {
     @Test
     public void possibleReservationsCapacityOverflow2() {
         manager2.makeReservation(
-                new ScheduleRequest(3, 8, 123, destination)
+                new ScheduleRequest(3, 8, 123, 987)
         );
         manager2.makeReservation(
-                new ScheduleRequest(7, 12, 789, destination)
+                new ScheduleRequest(7, 12, 789, 987)
         );
         manager2.makeReservation(
-                new ScheduleRequest(10, 13, 789, destination)
+                new ScheduleRequest(10, 13, 789, 987)
         );
         manager2.makeReservation(
-                new ScheduleRequest(15, 19, 789, destination)
+                new ScheduleRequest(15, 19, 789, 987)
         );
         manager2.makeReservation(
-                new ScheduleRequest(18, 23, 789, destination)
+                new ScheduleRequest(18, 23, 789, 987)
         );
 
 
@@ -439,5 +436,50 @@ public class ScheduleManagerTest {
         assertEquals(14, possRes1.getArrivalEnd());
         assertEquals(15, possRes1.getDepartureStart());
         assertEquals(17, possRes1.getDepartureEnd());
+    }
+
+    /*
+    Time
+     */
+    @Test
+    public void testTick() {
+        manager1.makeReservation(
+                new ScheduleRequest(1, 3, 123, 987)
+        );
+        manager1.makeReservation(
+                new ScheduleRequest(21, 26, 789, 987)
+        );
+        assertEquals(2, manager1.getNbOfReservations());
+
+        for (int i=1; i < Reservation.getLifeTime(); i++) {
+            manager1.tick();
+            assertEquals(2, manager1.getNbOfReservations());
+        }
+
+        manager1.tick();
+        assertEquals(0, manager1.getNbOfReservations());
+    }
+
+    @Test
+    public void testAdvanceTime() {
+        manager1.makeReservation(
+                new ScheduleRequest(1, 3, 123, 987)
+        );
+        manager1.makeReservation(
+                new ScheduleRequest(21, 26, 789, 987)
+        );
+        assertEquals(2, manager1.getNbOfReservations());
+
+        manager1.advanceTime(1);
+        assertEquals(2, manager1.getNbOfReservations());
+
+        manager1.advanceTime(2);
+        assertEquals(2, manager1.getNbOfReservations());
+
+        manager1.advanceTime(3);
+        assertEquals(2, manager1.getNbOfReservations());
+
+        manager1.advanceTime(4);
+        assertEquals(1, manager1.getNbOfReservations());
     }
 }

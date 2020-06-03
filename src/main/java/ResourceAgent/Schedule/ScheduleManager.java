@@ -76,6 +76,10 @@ public class ScheduleManager {
         return false;
     }
 
+    public int getNbOfReservations() {
+        return schedule.getNbOfReservations();
+    }
+
     public List<PossibleReservation> getPossibleReservations(ScheduleRequest request) {
         int start = request.getStart();
         int end = request.getEnd();
@@ -228,7 +232,7 @@ public class ScheduleManager {
         for (int i=maxStart; i<=minEnd; i++) {
             int capacity = capacitySlots.get(i);
             capacitySlots.remove(i);
-            if (reservation.matchingDestination(request.getDestination())) {
+            if (reservation.matchingDestination(request.getDestinationId())) {
                 capacitySlots.add(i, capacity - 1);
             } else {
                 capacitySlots.add(i, 0);
@@ -287,7 +291,18 @@ public class ScheduleManager {
             throws IllegalArgumentException {
         schedule.addReservation(
                 request.getStart(), request.getEnd(),
-                request.getAgvId(), request.getDestination()
+                request.getAgvId(), request.getDestinationId()
         );
+    }
+
+    /*
+    Time
+     */
+    public void tick() {
+        schedule.evaporate();
+    }
+
+    public void advanceTime(int currentTime) {
+        schedule.advanceTime(currentTime);
     }
 }

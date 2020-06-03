@@ -1,5 +1,19 @@
 package AGVAgent;
 
+import CommunicationManager.AGVCommunication;
+import CommunicationManager.CommunicationManagerInterface;
+import DelegateMAS.ExplorationMAS;
+import DelegateMAS.IntentionMAS;
+import Order.Order;
+import ResourceAgent.ResourceAgent;
+import com.github.rinde.rinsim.core.model.comm.CommDeviceBuilder;
+import com.github.rinde.rinsim.core.model.comm.CommUser;
+import com.github.rinde.rinsim.geom.Point;
+import com.google.common.base.Optional;
+import org.apache.commons.math3.random.RandomGenerator;
+
+import java.util.List;
+
 //import com.github.rinde.rinsim.core.model.comm.MessageContents;
 //import ResourceAgent.PDAgent;
 //import com.github.rinde.rinsim.core.model.pdp.Vehicle;
@@ -303,16 +317,75 @@ package AGVAgent;
 //    }
 //}
 
-public class AGVAgent {
+public class AGVAgent implements CommUser {
 
+    /*
+    Counter that is used to give every resource a
+        unique ID.
+     */
     private static int idCounter = 0;
 
+    /*
+    A unique ID among AGV agents.
+     */
     private int agvId;
 
-    public AGVAgent() {
-        agvId = next();
+    /*
+    The resource agent that this agent is
+        currently traversing.
+     */
+    private ResourceAgent currentResource;
+
+    /*
+    The communication manager of this AGV agent.
+        The manager handles all the contact with
+        other entities in the world.
+     */
+    private AGVCommunication commManager;
+
+    /*
+    The exploration MAS module of this AGV agent.
+        The module is used to regularly update the
+        beliefs about the state of the world and
+        to change the desires of this agent accordingly.
+     */
+    private ExplorationMAS explorationMAS;
+
+    /*
+    The intention MAS module of this AGV agent.
+        The module is used to regularly consider
+        to change intention based on changing beliefs
+        from the exploration MAS module.
+     */
+    private IntentionMAS intentionMAS;
+
+    /*
+    The order that this AGV agent might carry.
+     */
+    private Optional<Order> order;
+
+    /*
+    The random generator of this agv agent.
+        Used to generate random numbers.
+     */
+    private RandomGenerator randomGenerator;
+
+
+    /*
+    Constructor
+     */
+    public AGVAgent(ResourceAgent firstResource, RandomGenerator randomGenerator) {
+        this.agvId = next();
+        this.explorationMAS = new ExplorationMAS(this);
+        this.order = Optional.absent();
+        this.currentResource = firstResource;
+        this.randomGenerator = randomGenerator;
     }
 
+
+    /*
+    AGV ID
+     */
     private static int next() {
         idCounter += 1;
         return idCounter;
@@ -320,5 +393,65 @@ public class AGVAgent {
 
     public int getAgvId() {
         return agvId;
+    }
+
+    /*
+    Communication Manager
+     */
+    @Override
+    public Optional<Point> getPosition() {
+        return null;
+    }
+
+    @Override
+    public void setCommDevice(CommDeviceBuilder commDeviceBuilder) {
+        commManager = new AGVCommunication(this, commDeviceBuilder.build());
+    }
+
+    public AGVCommunication getCommunicationManager() {
+        return commManager;
+    }
+
+    /*
+    Exploration MAS
+     */
+    public ExplorationMAS getExplorationMAS() {
+        return explorationMAS;
+    }
+
+    /*
+    Intention MAS
+     */
+    public IntentionMAS getIntentionMAS() {
+        return intentionMAS;
+    }
+
+    /*
+    Order
+     */
+    public boolean carriesOrder() {
+        return order.isPresent();
+    }
+
+    public Order getOrder() {
+        return order.get();
+    }
+
+    public List<Integer> getOrderDestinations() {
+        return getOrder().getDestinations();
+    }
+
+    /*
+    Resource Agent
+     */
+    public ResourceAgent getCurrentResource() {
+        return currentResource;
+    }
+
+    /*
+    Random Generator
+     */
+    public RandomGenerator getRandomGenerator() {
+        return randomGenerator;
     }
 }

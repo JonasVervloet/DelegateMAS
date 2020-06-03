@@ -4,16 +4,34 @@ import com.github.rinde.rinsim.geom.Point;
 
 public class ScheduleRequest {
 
+    /*
+    The start time of this schedule request.
+     */
     private int start;
 
+    /*
+    The end time of this schedule request.
+     */
     private int end;
 
+    /*
+    The ID of the AGV Agent that makes this
+        request.
+     */
     private int agvId;
 
-    private Point destination;
+    /*
+    The ID of the resource agent that the AGV
+        agent will visit after this resource
+        agent.
+     */
+    private int destinationId;
 
 
-    public ScheduleRequest(int start, int end, int agvId, Point destination)
+    /*
+    Constructor
+     */
+    public ScheduleRequest(int start, int end, int agvId, int destinationId)
             throws IllegalArgumentException{
         if (! isValidStart(start)) {
             throw new IllegalArgumentException(
@@ -33,12 +51,12 @@ public class ScheduleRequest {
             );
         }
         this.agvId = agvId;
-        if (! isValidDestination(destination)) {
+        if (! isValidDestinationId(destinationId)) {
             throw new IllegalArgumentException(
-                    "SCHEDULE REQUEST | GIVEN DESTINATION IS NOT A VALID ONE"
+                    "SCHEDULE REQUEST | GIVEN DESTINATION ID IS NOT A VALID ONE"
             );
         }
-        this.destination = destination;
+        this.destinationId = destinationId;
     }
 
 
@@ -78,11 +96,11 @@ public class ScheduleRequest {
     /*
     Destination
      */
-    public boolean isValidDestination(Point destination) {
-        return !( destination == null);
+    public boolean isValidDestinationId(int destinationId) {
+        return destinationId > 0;
     }
 
-    public Point getDestination() {
-        return destination;
+    public int getDestinationId() {
+        return destinationId;
     }
 }

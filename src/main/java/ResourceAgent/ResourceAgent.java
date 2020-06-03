@@ -1,25 +1,71 @@
 package ResourceAgent;
 
-import ResourceAgent.Schedule.Schedule;
+import ResourceAgent.Schedule.ScheduleManager;
+import com.github.rinde.rinsim.core.model.comm.CommUser;
 import com.github.rinde.rinsim.core.model.time.TickListener;
 import com.github.rinde.rinsim.core.model.time.TimeLapse;
 import com.github.rinde.rinsim.geom.Point;
-import java.util.*;
 
-//import AGVAgent.AGVAgent;
-//import Ants.*;
+public abstract class ResourceAgent implements TickListener, CommUser {
 
-public abstract class ResourceAgent implements TickListener {
+    /*
+    Counter that is used to give every resource
+        a unique id.
+     */
+    private static int idCounter = 10;
 
-    private int capacity;
+    /*
+    A unique id among resource agents.
+        Machines do not get a unique id, but
+        get a id that is linked to the type
+        of machine.
+     */
+    private int resourceId;
+
+    /*
+    The schedule manager of this resource agent.
+        The
+     */
+    private ScheduleManager scheduleManager;
+
+    /*
+    The AGV manager of this resource agent.
+     */
+    private AGVManager agvManager;
+
+    /*
+    The number of ticks before one time unit passes.
+     */
+    private static int timeAdvancementFrequency = 100;
+
+    /*
+    Counter that counts the number of ticks.
+     */
+    private int tickCounter;
 
 
-    ResourceAgent() {
-        capacity = 1;
+    /*
+    Constructor
+     */
+    public ResourceAgent(int capacity, int traversalTime)
+            throws IllegalArgumentException {
+        if (! isValidCapacity(capacity)) {
+            throw new IllegalArgumentException(
+                    "RESOURCE AGENT | THE GIVEN CAPACITY IS NOT A VALID ONE"
+            );
+        }
+        if(! isValidTraversalTime(traversalTime)) {
+            throw new IllegalArgumentException(
+                    "RESOURCE AGENT | THE GIVEN TRAVERSAL TIME IS NOT A VALID ONE"
+            );
+        }
+        scheduleManager = new ScheduleManager(capacity, traversalTime);
+        agvManager = new AGVManager();
+        tickCounter = 0;
     }
 
     /*
-    TYPES
+    Types
      */
     public boolean isIntersectionAgent() {
         return false;
@@ -41,51 +87,111 @@ public abstract class ResourceAgent implements TickListener {
         return false;
     }
 
+    /*
+    Resource ID
+     */
+    protected static int next() {
+        idCounter += 1;
+        return idCounter;
+    }
+
+    public int getResourceId() {
+        return resourceId;
+    }
+
+    protected void setResourceId() {
+        resourceId = provideId();
+    }
+
+    protected int provideId() {
+        return next();
+    }
 
     /*
-    NEIGHBORS
+    Neighbors
      */
     public abstract boolean checkAllNeighborsSet();
-
-    public abstract ResourceAgent getNeighbor(Point point);
 
     public abstract void addNeighbor(Point connection, ResourceAgent agent) throws IllegalArgumentException;
 
     public abstract void connectNeighbor(ResourceAgent agent) throws IllegalArgumentException;
 
-//    public void sendMessage(MessageContents contents, ResourceAgent destination) {
-//        destination.receiveMessage(contents);
-//    }
+    /*
+    ScheduleManager
+     */
+    private boolean isValidCapacity(int capacity) {
+        return capacity > 0;
+    }
 
-//    public void receiveMessage(MessageContents contents) {
-//        if (contents.getClass() == RandomExplorationAnt.class) {
-//            RandomExplorationAnt ant = (RandomExplorationAnt) contents;
-//            ant.inspectAgent(this);
-//        } else if (contents.getClass() == IntentionAnt.class) {
-//            ((IntentionAnt) contents).inspectAgent(this);
-//        } else if (contents.getClass() == TypeExplorationAnt.class) {
-//            ((TypeExplorationAnt) contents).inspectAgent(this);
-//        } else if (contents.getClass() == PointExplorationAnt.class) {
-//            ((PointExplorationAnt) contents).inspectAgent(this);
-//        } else if (contents.getClass() == RequestAfterTickMsg.class) {
-//            ((RequestAfterTickMsg) contents).inspectAgent(this);
-//        } else if (contents.getClass() == RetractInteractionMsg.class) {
-//            ((RetractInteractionMsg) contents).inspectAgent(this);
-//        } else if (contents.getClass() == RetractAcceptedInteractionMsg.class) {
-//            ((RetractAcceptedInteractionMsg) contents).inspectAgent(this);
-//        } else {
-//            System.out.println("RESOURCE AGENT | MESSAGE OF UNKNOWN TYPE RECEIVED");
-//            System.out.println(contents.getClass());
-//        }
-//    }
+    private boolean isValidTraversalTime(int traversalTime) {
+        return traversalTime > 0;
+    }
 
-//    public void registerAGVAgent(AGVAgent.AGVAgent agent) {}
+    public ScheduleManager getScheduleManager() {
+        return scheduleManager;
+    }
 
-//    public void unregisterAGVAgent(AGVAgent.AGVAgent agent) {}
+    /*
+    AGV Manager
+     */
+    public AGVManager getAgvManager() {
+        return agvManager;
+    }
 
+    /*
+    Time Advancement Frequency
+     */
+    private static boolean isValidTimeAdvancementFrequency(int aFrequency) {
+        return aFrequency > 0;
+    }
+
+    private static int getTimeAdvancementFrequency() {
+        return timeAdvancementFrequency;
+    }
+
+    public static void setTimeAdvancementFrequency(int aFrequency)
+            throws IllegalArgumentException {
+        if (! isValidTimeAdvancementFrequency(aFrequency)) {
+            throw new IllegalArgumentException(
+                    "RESOURCE AGENT | THE GIVEN FREQUENCY IS NOT A VALID ONE"
+            );
+        }
+        timeAdvancementFrequency = aFrequency;
+    }
+
+    /*
+    Tick Counter
+     */
+    private boolean tickCounterEqualsFrequency() {
+        return getTickCounter() % getTimeAdvancementFrequency() == 0;
+    }
+
+    private int getTickCounter() {
+        return tickCounter;
+    }
+
+    public int getCurrentTime() {
+        return (getTickCounter() / getTimeAdvancementFrequency());
+    }
+
+    private void incrementTickCounter() {
+        tickCounter += 1;
+    }
+
+    private void resetTickCounter() {
+        tickCounter = 0;
+    }
+
+    /*
+    Tick Listener
+     */
     @Override
-    public void tick(TimeLapse timeLapse) {}
-
-    @Override
-    public void afterTick(TimeLapse timeLapse) {}
+    public void tick(TimeLapse timeLapse) {
+        scheduleManager.tick();
+        incrementTickCounter();
+        if (tickCounterEqualsFrequency()) {
+            resetTickCounter();
+            scheduleManager.advanceTime(getCurrentTime());
+        }
+    }
 }

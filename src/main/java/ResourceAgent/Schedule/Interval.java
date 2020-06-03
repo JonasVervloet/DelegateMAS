@@ -12,6 +12,9 @@ public class Interval {
      */
     final int end;
 
+    /*
+    Constructor
+     */
     public Interval(int start, int end)
             throws IllegalArgumentException {
         if (! isValidStartTime(start)) {
@@ -29,6 +32,12 @@ public class Interval {
         this.end = end;
     }
 
+    public Interval(Interval other) {
+        this.start = other.getStart();
+        this.end = other.getEnd();
+    }
+
+
     /*
     Start
      */
@@ -39,7 +48,6 @@ public class Interval {
     public int getStart() {
         return this.start;
     }
-
 
     /*
     End
@@ -52,12 +60,50 @@ public class Interval {
         return this.end;
     }
 
+    /*
+    Overlap
+     */
     public boolean withingInterval(int time) {
         return (time >= start && time <= end);
     }
 
+    public boolean overlap(int otherStart, int otherEnd) {
+        return (! (otherEnd < start || otherStart > end));
+    }
+
+    public boolean overlapInterval(Interval other) {
+        return overlap(other.getStart(), other.getEnd());
+    }
+
+    public Interval incrementInterval() {
+        return new Interval(getStart() + 1, getEnd() + 1);
+    }
+
+    public Interval decrementInterval() {
+        return new Interval(getStart() - 1, getEnd() - 1);
+    }
+
+    public Interval getOverlappingInterval(Interval other) {
+        if (! overlapInterval(other)) {
+            throw new IllegalArgumentException(
+                    "INTERVAL | THE TWO INTERVALS DO NO OVERLAP"
+            );
+        }
+        return new Interval(
+                Math.max(getStart(), other.getStart()),
+                Math.min(getEnd(), other.getEnd())
+        );
+    }
+
+    /*
+    Utils
+     */
     @Override
     public String toString() {
         return "Interval: start - " + start + ", end - " + end;
+    }
+
+    public Interval copyInterval() {
+        return new Interval(this);
     }
 }

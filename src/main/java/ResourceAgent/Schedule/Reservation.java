@@ -1,6 +1,4 @@
 package ResourceAgent.Schedule;
-
-import com.github.rinde.rinsim.geom.Point;
 import org.jetbrains.annotations.NotNull;
 
 public class Reservation implements Comparable {
@@ -26,7 +24,7 @@ public class Reservation implements Comparable {
     The destination point of the AGV agent within the resource agent
         that manages this reservation.
      */
-    private Point destination;
+    private int destinationId;
 
     /*
     The time to live for this reservation. After this time expires, it
@@ -34,8 +32,12 @@ public class Reservation implements Comparable {
      */
     private int timeToLive;
 
+
+    /*
+    Constructor
+     */
     public Reservation(int start, int end, int agvId,
-                       Point destination) throws IllegalArgumentException {
+                       int destinationId) throws IllegalArgumentException {
         if (! isValidStartTime(start)) {
             throw new IllegalArgumentException("RESERVATION | NO VALID START TIME");
         }
@@ -50,7 +52,13 @@ public class Reservation implements Comparable {
             throw new IllegalArgumentException("RESERVATION | NO VALID AGV ID");
         }
         this.agvId = agvId;
-        this.destination = destination;
+
+        if (! isValidDestinationId(destinationId)) {
+            throw new IllegalArgumentException(
+                    "RESERVATION | GIVEN DESTINATION ID IS NOT A VALID ONE"
+            );
+        }
+        this.destinationId = destinationId;
 
         this.timeToLive = LIFETIME;
     }
@@ -65,6 +73,10 @@ public class Reservation implements Comparable {
 
     private boolean isValidEndTime(int endTime) {
         return endTime > start;
+    }
+
+    public boolean endTimePassed(int currentTime) {
+        return currentTime > getEndTime();
     }
 
     public int getStartTime() {
@@ -129,17 +141,40 @@ public class Reservation implements Comparable {
     /*
     Destination
      */
-    public boolean matchingDestination(Point aDestination) {
-        return destination.equals(aDestination);
+    public boolean isValidDestinationId(int destinationId) {
+        return destinationId > 0;
     }
 
-    public Point getDestination() {
-        return this.destination;
+    public boolean matchingDestination(int otherDestId) {
+        return destinationId == otherDestId;
+    }
+
+    public int getDestinationId() {
+        return this.destinationId;
     }
 
     /*
     Time To Live
      */
+    private static boolean isValidLifeTime(int lifeTime) {
+        return lifeTime > 0;
+    }
+
+    public static void setLifeTime(int lifeTime)
+            throws IllegalArgumentException {
+        if (! isValidLifeTime(LIFETIME)) {
+            throw new IllegalArgumentException(
+                    "RESERVATION | GIVEN LIFE TIME IS NOT A VALID ONE"
+            );
+        }
+
+        LIFETIME = lifeTime;
+    }
+
+    public boolean hasTimeToLive() {
+        return timeToLive > 0;
+    }
+
     public static int getLifeTime() {
         return Reservation.LIFETIME;
     }
@@ -153,28 +188,26 @@ public class Reservation implements Comparable {
         if (timeToLive == 0) {
             throw new IllegalStateException("RESERVATION | EVAPORATING WHEN TIME TO LIVE EQUALS ZERO");
         }
-        if (end == 0) {
-            throw new IllegalStateException("RESERVATION | EVAPORATION WHEN END TIME EQUALS ZERO");
-        }
 
         timeToLive -= 1;
-        if (start != 0) {
-            start -= 1;
-        }
-        end -= 1;
     }
 
     public void refresh() {
         timeToLive = LIFETIME;
     }
 
-
+    /*
+    String
+     */
     @Override
     public String toString() {
         return "Reservation: start - " + this.start + ", end - " + this.end
-                + ", agv ID - " + this.agvId + ", destination - " + this.destination.toString();
+                + ", agv ID - " + this.agvId + ", destination ID - " + this.destinationId;
     }
 
+    /*
+    Compare
+     */
     @Override
     public int compareTo(@NotNull Object o) {
         Reservation other = (Reservation) o;

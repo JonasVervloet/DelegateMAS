@@ -1,45 +1,88 @@
 package ResourceAgent;
 
+import CommunicationManager.CommunicationManagerInterface;
+import CommunicationManager.PDCommunication;
+import DelegateMAS.FeasibilityMAS;
+import Order.Order;
+import com.github.rinde.rinsim.core.model.comm.CommDeviceBuilder;
 import com.github.rinde.rinsim.core.model.time.TimeLapse;
 import com.github.rinde.rinsim.geom.Point;
+import com.google.common.base.Optional;
 
-//import AGVAgent.AGVAgent;
-//import Ants.Path;
-//import Ants.RequestAfterTickMsg;
-//import MASProject;
-//import Order;
+import javax.swing.text.html.Option;
 
 
 public class PDAgent extends ResourceAgent {
 
-    private Neighbor neighbor;
+    /*
+    The type of PD Agent.
+     */
     private PDType type;
 
-//    private Order order;
-//    private boolean busy;
-//    private boolean interactionAccepted;
-//    private int ordercnt;
-//    private AGVAgent.AGVAgent agent;
-//    private List<PossibleInteraction> possibleInteractions;
+    /*
+    The neighbor of this PD Agent.
+     */
+    private Neighbor neighbor;
+
+    /*
+    The communication manager of this PD agent.
+        The manager handles all the contact with
+        other entities in the world.
+     */
+    private PDCommunication commManager;
+
+    /*
+    The feasibility MAS module of this PD agent.
+       The module regularly sends out feasibility
+       agents.
+     */
+    private FeasibilityMAS feasibilityMAS;
 
 
+    /*
+    Constructor
+     */
     public PDAgent(Point vertex1, PDType type) {
-        neighbor = new Neighbor(vertex1);
+        super(getCapacity(type), getTraversalTim(type));
+        this.neighbor = new Neighbor(vertex1);
         this.type  = type;
-
-//        order = null;
-//        busy = false;
-//        ordercnt = 0;
-//        possibleInteractions = new ArrayList<>();
+        this.feasibilityMAS = new FeasibilityMAS(this);
+        setResourceId();
     }
 
 
     /*
-    TYPES
+    Resource Agent
      */
     @Override
-    public boolean isDeliveryPoint() {
-        return  type == PDType.DELIVER_POINT;
+    protected int provideId() {
+        if (type == PDType.MACHINE_A) {
+            return 1;
+        } else if (type == PDType.MACHINE_B) {
+            return 2;
+        } else if (type == PDType.MACHINE_C) {
+            return 3;
+        } else if (type == PDType.MACHINE_D) {
+            return 4;
+        } else {
+            return next();
+        }
+    }
+
+    private static int getCapacity(PDType type) {
+        return 1;
+    }
+
+    private static int getTraversalTim(PDType type) {
+        return 4;
+    }
+
+    /*
+    Types
+     */
+    @Override
+    public boolean isStorageSpace() {
+        return type == PDType.STORAGE;
     }
 
     @Override
@@ -51,56 +94,51 @@ public class PDAgent extends ResourceAgent {
     }
 
     @Override
-    public boolean isStorageSpace() {
-        return type == PDType.STORAGE;
+    public boolean isDeliveryPoint() {
+        return  type == PDType.DELIVER_POINT;
     }
 
     /*
-    NEIGHBOUR
+    Neighbors
      */
-    public boolean hasConnection(Point point) {
-        return neighbor.isValidConnection(point);
-    }
-
-    public Point getConnection() {
-        return neighbor.getConnection();
-    }
-
     @Override
     public boolean checkAllNeighborsSet() {
         return neighbor.agentSet();
     }
 
-    public ResourceAgent getNeighborAgent() {
+    public int getNeighborId() {
+        return getNeighborAgent().getResourceId();
+    }
+
+    public ResourceAgent getNeighborAgent()
+            throws IllegalStateException {
+        if (! neighbor.agentSet()) {
+            throw new IllegalStateException(
+                    "PD AGENT | THERE HAS NOT YET BEEN ASSIGNED A AGENT TO THE NEIGHBOR OBJECT OF THIS AGENT"
+            );
+        }
         return neighbor.getAgent();
     }
 
     @Override
-    public ResourceAgent getNeighbor(Point point)
-            throws IllegalArgumentException {
-        if (neighbor.isValidConnection(point)) {
-            return  neighbor.getAgent();
-        } else {
-           throw new IllegalArgumentException(
-                   "PD AGENT | NO NEIGHBOURS WITH GIVEN CONNECTION PRESENT"
-           );
-        }
-    }
-
-    @Override
     public void addNeighbor(Point connection, ResourceAgent agent)
-            throws IllegalArgumentException {
-        if (neighbor.isValidConnection(connection)) {
-            neighbor.setAgent(agent);
-        } else {
-            throw new IllegalArgumentException(
-                    "PD AGENT | TRYING TO SET AN AGENT FOR THIS PD AGENT WHILE THE CONNECTION DOES NOT MATCH"
+            throws IllegalArgumentException, IllegalStateException {
+        if (neighbor.agentSet()) {
+            throw new IllegalStateException(
+                    "PD AGENT | THIS PD AGENT HAS ALREADY A RESOURCE AGENT FOR ITS NEIGHBOR"
             );
+        } else if (! neighbor.isValidConnection(connection)) {
+            throw new IllegalArgumentException(
+                    "PD AGENT | THE CONNECTION DOES NOT MATCH"
+            );
+        } else {
+            neighbor.setAgent(agent);
         }
     }
 
     @Override
-    public void connectNeighbor(ResourceAgent agent) throws IllegalArgumentException {
+    public void connectNeighbor(ResourceAgent agent)
+            throws IllegalArgumentException {
         try {
             agent.addNeighbor(neighbor.getConnection(), this);
             neighbor.setAgent(agent);
@@ -112,18 +150,54 @@ public class PDAgent extends ResourceAgent {
     }
 
     /*
-    TYPE
+    Communication Manager
      */
-    public boolean isStorageAgent() {
-        return type.equals(PDType.STORAGE);
+    @Override
+    public Optional<Point> getPosition() {
+        return Optional.of(neighbor.getConnection());
     }
 
-    public boolean isDeliveryAgent() {
-        return type.equals(PDType.DELIVER_POINT);
+    @Override
+    public void setCommDevice(CommDeviceBuilder commDeviceBuilder) {
+        commManager = new PDCommunication(this, commDeviceBuilder.build());
     }
 
-    public PDType getType() {
-        return type;
+    public PDCommunication getCommunicationManager() {
+        return commManager;
+    }
+
+    /*
+    Feasibility MAS
+     */
+    public FeasibilityMAS getFeasibilityMAS() {
+        return feasibilityMAS;
+    }
+
+    public void registerOrder(Order order) {
+        feasibilityMAS.registerOrder(order);
+    }
+
+    /*
+    Tick Listener
+     */
+    @Override
+    public void tick(TimeLapse timeLapse) {
+        super.tick(timeLapse);
+        commManager.checkMessages();
+        feasibilityMAS.tick();
+    }
+
+    @Override
+    public void afterTick(TimeLapse timeLapse) {
+        commManager.checkMessages();
+    }
+
+    /*
+    String
+     */
+    @Override
+    public String toString() {
+        return "PD agent: " + neighbor.toString();
     }
 
     /*
@@ -283,23 +357,6 @@ public class PDAgent extends ResourceAgent {
 //    }
 
     /*
-    COMMMUNICATION
-     */
-//    public void sendMessageToNeighbour(MessageContents message) {
-//        super.sendMessage(message, neighbour.getAgent());
-//    }
-//
-//    public void sendMessageToAGV(MessageContents message, String agvname) {
-//        if (agent != null && agent.getName().equals(agvname)) {
-//            agent.receiveMessage(message);
-//        } else {
-//            System.out.println(agent.getName());
-//            System.out.println(agvname);
-//            System.out.println("PD AGENT | NO AGENT WITH THAT NAME PRESENT");
-//        }
-//    }
-
-    /*
     AGV AGENT
      */
 //    @Override
@@ -326,40 +383,4 @@ public class PDAgent extends ResourceAgent {
 //            agent = null;
 //        }
 //    }
-//
-//    @Override
-//    public boolean checkAllNeighborsSet() {
-//        return false;
-//    }
-//
-//    @Override
-//    public ResourceAgent.ResourceAgent getNeighbor(Point point) {
-//        return null;
-//    }
-//
-//    @Override
-//    public void addNeighbor(Point connection, ResourceAgent.ResourceAgent agent) {
-//
-//    }
-
-    /*
-        TICK LISTENENER
-         */
-    @Override
-    public void tick(TimeLapse timeLapse) {
-//        if (busy) {
-//            ordercnt += 1;
-//            if (ordercnt == MASProject.MACHINE_WORKTIME) {
-//                busy = false;
-//                interactionAccepted = false;
-//                order.reactivate(getConnection());
-//                ordercnt = 0;
-//            }
-//        }
-    }
-
-    @Override
-    public String toString() {
-        return "PD agent: " + neighbor.toString();
-    }
 }

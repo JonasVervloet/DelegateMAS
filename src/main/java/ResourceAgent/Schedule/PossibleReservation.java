@@ -14,6 +14,10 @@ public class PossibleReservation {
      */
     private Interval departureInterval;
 
+
+    /*
+    Constructor
+     */
     public PossibleReservation(Interval arrivalInterval, Interval departureInterval)
             throws IllegalArgumentException {
         if (! isValidArrivalInterval(arrivalInterval)) {
@@ -31,6 +35,12 @@ public class PossibleReservation {
         this.departureInterval = departureInterval;
     }
 
+    public PossibleReservation(PossibleReservation other) {
+        this.arrivalInterval = other.getArrivalInterval().copyInterval();
+        this.departureInterval = other.getDepartureInterval().copyInterval();
+    }
+
+
     /*
     Arrival interval
      */
@@ -44,6 +54,10 @@ public class PossibleReservation {
 
     public int getArrivalEnd() {
         return arrivalInterval.getEnd();
+    }
+
+    protected Interval getArrivalInterval() {
+        return arrivalInterval;
     }
 
     /*
@@ -61,6 +75,9 @@ public class PossibleReservation {
         return departureInterval.getEnd();
     }
 
+    protected Interval getDepartureInterval() {
+        return departureInterval;
+    }
 
     /*
     Interval interaction
@@ -141,5 +158,30 @@ public class PossibleReservation {
                     "POSSIBLE RESERVATION | NOT POSSIBLE TO ADJUST TO GIVEN TRAVERSAL TIME"
             );
         }
+    }
+
+    /*
+    Other Possible Reservation
+     */
+    public boolean overlapWithNextPossReservation(PossibleReservation next) {
+        return departureInterval.incrementInterval()
+                .overlapInterval(next.getArrivalInterval());
+    }
+
+    public PossibleReservation copyReservation() {
+        return new PossibleReservation(this);
+    }
+
+    public void adjustToNextPossibleReservation(PossibleReservation next)
+            throws IllegalArgumentException {
+        if (! overlapWithNextPossReservation(next)) {
+            throw new IllegalArgumentException(
+                    "POSSIBLE RESERVATION | THE GIVEN POSSIBLE RESERVATION IS NOT A VALID NEXT ONE"
+            );
+        }
+
+        departureInterval = getDepartureInterval().incrementInterval()
+                .getOverlappingInterval(next.getArrivalInterval())
+                .decrementInterval();
     }
 }

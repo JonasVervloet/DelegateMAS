@@ -1,32 +1,58 @@
 package ResourceAgent;
 
-import ResourceAgent.Schedule.Schedule;
+import CommunicationManager.CommunicationManagerInterface;
+import CommunicationManager.RoadCommunication;
+import com.github.rinde.rinsim.core.model.comm.CommDeviceBuilder;
 import com.github.rinde.rinsim.core.model.time.TimeLapse;
 import com.github.rinde.rinsim.geom.Point;
+import com.google.common.base.Optional;
 
-//import AGVAgent.AGVAgent;
+public class RoadAgent extends InfrastructureAgent {
 
-public class RoadAgent extends ResourceAgent {
-
+    /*
+    The first neighbor of this road agent.
+     */
     private Neighbor neighbor1;
+
+    /*
+    The second neighbor of this road agent.
+     */
     private Neighbor neighbor2;
-    private Schedule schedule;
 
-//    private List<AGVAgent.AGVAgent> agents;
+    /*
+    The communication manager of this road agent.
+        The manager handles all the contact with
+        other entities in the world.
+     */
+    private CommunicationManagerInterface commManager;
 
+
+    /*
+    Constructor
+     */
     public RoadAgent(Point vertex1, Point vertex2) {
+        super(getCapacity(vertex1, vertex2), getTraversalTime(vertex1, vertex2));
         neighbor1 = new Neighbor(vertex1);
         neighbor2 = new Neighbor(vertex2);
-
-//        agents = new ArrayList<>();
-
-        // TODO: change to actual capacity
-//        schedule = new Schedule(1);
     }
 
 
     /*
-    TYPES
+    Resource Agent
+     */
+    private static int getTraversalTime(Point vertex1, Point vertex2) {
+        int diffX = (int) Math.abs((vertex1.x - vertex2.x) / 2);
+        int diffY = (int) Math.abs((vertex1.y - vertex2.y) / 2);
+
+        return diffX + diffY;
+    }
+
+    private static int getCapacity(Point vertex1, Point vertex2) {
+        return getTraversalTime(vertex1, vertex2);
+    }
+
+    /*
+    Types
      */
     @Override
     public boolean isRoadAgent() {
@@ -34,7 +60,7 @@ public class RoadAgent extends ResourceAgent {
     }
 
     /*
-    NEIGHBOURS
+    Neighbors
      */
     @Override
     public boolean checkAllNeighborsSet() {
@@ -42,16 +68,48 @@ public class RoadAgent extends ResourceAgent {
                 neighbor2.agentSet());
     }
 
-    public ResourceAgent getNeighbor(Point point)
+    private boolean isValidNeighborId(int aResourceId)
+            throws IllegalStateException {
+        if (! checkAllNeighborsSet()) {
+            throw new IllegalStateException(
+                    "ROAD AGENT | NOT ALL NEIGHBORS HAVE BEEN SET"
+            );
+        }
+        return (neighbor1.matchesResourceId(aResourceId) ||
+                neighbor2.matchesResourceId(aResourceId));
+    }
+
+    public int getOtherNeighborId(int firstNeighborId) {
+        return getOtherNeighborAgent(firstNeighborId).getResourceId();
+    }
+
+    public ResourceAgent getNeighborAgent(int resourceId)
             throws IllegalArgumentException {
-        if (neighbor1.isValidConnection(point)) {
+        if (! isValidNeighborId(resourceId)) {
+            throw new IllegalArgumentException(
+                    "ROAD AGENT | GIVEN RESOURCE ID IS NOT THE ID OF ANY NEIGHBOR"
+            );
+        }
+
+        if (neighbor1.matchesResourceId(resourceId)) {
             return neighbor1.getAgent();
-        } else if (neighbor2.isValidConnection(point)) {
+        } else {
+            return neighbor2.getAgent();
+        }
+    }
+
+    public ResourceAgent getOtherNeighborAgent(int firstNeighborId)
+            throws IllegalArgumentException {
+        if (! isValidNeighborId(firstNeighborId)) {
+            throw new IllegalArgumentException(
+                    "ROAD AGENT | GIVEN RESOURCE ID IS NOT THE ID OF ANY NEIGHBOR"
+            );
+        }
+
+        if (neighbor1.matchesResourceId(firstNeighborId)) {
             return neighbor2.getAgent();
         } else {
-            throw new IllegalArgumentException(
-                    "ROAD AGENT | NO NEIGHBOUR WITH GIVEN CONNECTION PRESENT"
-            );
+            return neighbor1.getAgent();
         }
     }
 
@@ -59,8 +117,18 @@ public class RoadAgent extends ResourceAgent {
     public void addNeighbor(Point connection, ResourceAgent agent)
             throws IllegalArgumentException {
         if (neighbor1.isValidConnection(connection)) {
+            if (neighbor1.agentSet()) {
+                throw new IllegalStateException(
+                        "ROAD AGENT | THIS NEIGHBOR HAS ALREADY BEEN SET"
+                );
+            }
             neighbor1.setAgent(agent);
         } else if (neighbor2.isValidConnection(connection)) {
+            if (neighbor2.agentSet()) {
+                throw new IllegalStateException(
+                        "ROAD AGENT | THIS NEIGHBOR HAS ALREADY BEEN SET"
+                );
+            }
             neighbor2.setAgent(agent);
         } else {
             throw new IllegalArgumentException(
@@ -87,115 +155,41 @@ public class RoadAgent extends ResourceAgent {
         }
     }
 
-    public boolean hasConnection(Point connection) {
-        return (neighbor1.isValidConnection(connection) ||
-                neighbor2.isValidConnection(connection));
+    /*
+    Comm User
+     */
+    @Override
+    public Optional<Point> getPosition() {
+        double x = (neighbor1.getConnection().x +
+                neighbor2.getConnection().x) / 2;
+        double y = (neighbor1.getConnection().y +
+                neighbor2.getConnection().y) / 2;
+        return Optional.of(new Point(x, y));
     }
 
-    public Point getExitPoint(Point entryPoint)
-            throws IllegalArgumentException {
-        if (neighbor1.isValidConnection(entryPoint)) {
-            return neighbor2.getConnection();
-        } else if (neighbor2.isValidConnection(entryPoint)) {
-            return neighbor1.getConnection();
-        } else {
-            throw new IllegalArgumentException(
-                    "ROAD AGENT | REQUESTING EXIT POINT WITHOUT VALID ENTRY POINT"
-            );
-        }
-    }
-
-    public int getTravelTime() {
-        Point conn1 = neighbor1.getConnection();
-        Point conn2 = neighbor2.getConnection();
-        if (conn1.x == conn2.x) {
-            return ((int) Math.abs((conn1.y - conn2.y) / 2));
-        } else if (conn1.y == conn2.y) {
-            return ((int) Math.abs((conn1.x - conn2.x)/2));
-        } else {
-            return ((int) (Math.abs((conn1.y  - conn2.y)/2)  + Math.abs((conn1.x - conn2.x)/2)));
-        }
+    @Override
+    public void setCommDevice(CommDeviceBuilder commDeviceBuilder) {
+        commManager = new RoadCommunication(this, commDeviceBuilder.build());
     }
 
     /*
-    COMMUNICATION
-     */
-//    public void sendMessage(MessageContents message, Point destination) {
-//        if (neighbour1.getConnection().equals(destination)) {
-//            super.sendMessage(message, neighbour1.getAgent());
-//        } else if (neighbour2.getConnection().equals(destination)) {
-//            super.sendMessage(message, neighbour2.getAgent());
-//        } else {
-//            System.out.println("ROAD AGENT | SENDING MESSAGE TO DESTINATION THAT HAS NO CONNECTION WITH THIS AGENT");
-//        }
-//    }
-
-    /*
-    AGV AGENT
-     */
-//    public boolean isValidRegistration(AGVAgent.AGVAgent agent) {
-//        return schedule.isValidRegistration(agent.getName());
-//    }
-//
-//    @Override
-//    public void registerAGVAgent(AGVAgent.AGVAgent vehicle) {
-//        for (AGVAgent.AGVAgent agent: agents) {
-//            if (agent.equals(vehicle)) {
-//                System.out.println("ROAD AGENT | AGV AGENT ALREADY REGISTERED");
-//            }
-//        }
-//        if (getCapacity() <= agents.size()){
-//            System.out.println("ROAD AGENT | FULL CAPACITY ALREADY REACHED");
-//        } else if (! isValidRegistration(vehicle)) {
-//            System.out.println("ROAD AGENT | THIS AGV AGENT CAN NOT REGISTER AT THIS MOMENT");
-//        } else {
-//            agents.add(vehicle);
-//        }
-//    }
-//
-//    @Override
-//    public void unregisterAGVAgent(AGVAgent.AGVAgent vehicle) {
-//        boolean found = false;
-//        for (AGVAgent.AGVAgent agent: agents) {
-//            if (agent.equals(vehicle)) {
-//                found = true;
-//            }
-//        }
-//        if (found) {
-//            agents.remove(vehicle);
-//        } else {
-//            System.out.println("ROAD AGENT | THIS AGV AGENT IS NOT REGISTERED HERE");
-//        }
-//    }
-
-    /*
-    SCHEDULE
-     */
-//    public List<FreeSlot> getFreeSlots(Point entryPoint, Point exitPoint) {
-//        List<FreeSlot> freeslots = schedule.computeFreeSlots(entryPoint, exitPoint);
-//        List<FreeSlot> result = new ArrayList<>();
-//        for(FreeSlot slot: freeslots) {
-//            if (slot.getEndTime() - slot.getStartTime() >= getTravelTime()) {
-//                result.add(slot);
-//            }
-//        }
-//        return result;
-//    }
-//
-//    public boolean makeReservation(int start , int end, String vehicleName, Point entry, Point exit) {
-//        return schedule.makeReservation(start, end, vehicleName, entry, exit);
-//    }
-
-    /*
-    TICK LISTENENER
+    Tick Listener
      */
     @Override
     public void tick(TimeLapse timeLapse) {
-//        schedule.evaporate();
+        commManager.checkMessages();
     }
 
     @Override
+    public void afterTick(TimeLapse timeLapse) {
+        commManager.checkMessages();
+    }
+
+    /*
+    String
+     */
+    @Override
     public String toString() {
-        return "RoadAgent: " + neighbor1.toString() + " + " +neighbor2.toString();
+        return "RoadAgent: " + neighbor1.toString() + " + " + neighbor2.toString();
     }
 }

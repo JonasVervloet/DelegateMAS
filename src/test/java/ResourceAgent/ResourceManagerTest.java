@@ -1,7 +1,7 @@
 package ResourceAgent;
 
+import ResourceAgent.ResourceMap.ResourceEntry;
 import ResourceAgent.ResourceMap.ResourceManager;
-import org.apache.commons.math3.util.Pair;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -35,6 +35,10 @@ public class ResourceManagerTest {
         manager.registerResource(789, 15, 15);
     }
 
+
+    /*
+    Constructor
+     */
     @Test
     public void validConstructor() {
         assertEquals(3, manager.getNeighborIds().size());
@@ -43,20 +47,51 @@ public class ResourceManagerTest {
         assert(manager.getNeighborIds().contains(789));
     }
 
+    /*
+    Resource Map
+     */
     @Test
     public void getMinDistances() {
-        assertEquals(3, manager.getMinDistances(56).size());
+        assertEquals(2, manager.getMinDistances(56, 789).size());
         List<Integer> minDistance1 = new ArrayList<>();
         minDistance1.add(3);
         minDistance1.add(9);
-        minDistance1.add(10);
-        assert(minDistance1.contains(manager.getMinDistances(56).get(0).getValue()));
-        assert(minDistance1.contains(manager.getMinDistances(56).get(1).getValue()));
-        assert(minDistance1.contains(manager.getMinDistances(56).get(2).getValue()));
+        assert(minDistance1.contains(manager.getMinDistances(56, 789).get(0).getValue()));
+        assert(minDistance1.contains(manager.getMinDistances(56, 789).get(1).getValue()));
 
-        assertEquals(1, manager.getMinDistances(78).size());
-        assertEquals(2, manager.getMinDistances(89).size());
-        assertEquals(1, manager.getMinDistances(87).size());
-        assertEquals(1, manager.getMinDistances(15).size());
+        assertEquals(0, manager.getMinDistances(78, 123).size());
+        assertEquals(1, manager.getMinDistances(78, 456).size());
+        assertEquals(1, manager.getMinDistances(78, 789).size());
+
+        assertEquals(2, manager.getMinDistances(89, 123).size());
+        assertEquals(1, manager.getMinDistances(89, 456).size());
+        assertEquals(1, manager.getMinDistances(89, 789).size());
+
+        assertEquals(1, manager.getMinDistances(87, 123).size());
+        assertEquals(0, manager.getMinDistances(87, 456).size());
+        assertEquals(1, manager.getMinDistances(87, 789).size());
+
+        assertEquals(1, manager.getMinDistances(15, 123).size());
+        assertEquals(1, manager.getMinDistances(15, 456).size());
+        assertEquals(0, manager.getMinDistances(15, 789).size());
+    }
+
+    /*
+    Tick
+     */
+    @Test
+    public void testTick() {
+        assertEquals(2, manager.getMinDistances(56, 456).size());
+
+        for (int i=1; i < ResourceEntry.getLifeTime(); i++) {
+            manager.tick();
+            assertEquals(2, manager.getMinDistances(56, 456).size());
+        }
+
+        manager.registerResource(123, 56, 3);
+        assertEquals(2, manager.getMinDistances(56, 456).size());
+
+        manager.tick();
+        assertEquals(1, manager.getMinDistances(56, 456).size());
     }
 }

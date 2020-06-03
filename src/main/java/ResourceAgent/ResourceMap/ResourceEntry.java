@@ -2,6 +2,12 @@ package ResourceAgent.ResourceMap;
 
 public class ResourceEntry {
 
+    /*
+    The life time of a resource entry.
+        If the entry is not refreshed
+        the entry will be deleted after
+        this time.
+     */
     private static int LIFETIME = 100;
 
     /*
@@ -73,10 +79,33 @@ public class ResourceEntry {
     }
 
     /*
-    Time to life
+    Lifetime
      */
     public static int getLifeTime() {
         return ResourceEntry.LIFETIME;
+    }
+
+    private static boolean isValidLifeTime(int lifeTime) {
+        return lifeTime > 0;
+    }
+
+    public static void setLifeTime(int lifeTime)
+            throws IllegalArgumentException {
+        if (! isValidLifeTime(lifeTime)) {
+            throw new IllegalArgumentException(
+                    "RESOURCE ENTRY | THE GIVEN LIFE TIME IS NOT A VALID ONE"
+            );
+        }
+
+        LIFETIME = lifeTime;
+    }
+
+    /*
+    Time To Live
+     */
+
+    public boolean isDone() {
+        return timeToLive == 0;
     }
 
     public int getTimeToLive() {

@@ -1,8 +1,5 @@
 package ResourceAgent.Schedule;
 
-import ResourceAgent.ResourceMap.ResourceEntry;
-import com.github.rinde.rinsim.geom.Point;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -10,7 +7,8 @@ import java.util.List;
 public class Schedule {
 
     /*
-    List of all reservations part of this schedule.
+    List of all reservations that are part of
+        this schedule.
      */
     private List<Reservation> reservations;
 
@@ -116,8 +114,34 @@ public class Schedule {
         return validReservations;
     }
 
-    public void addReservation(int start, int end, int agvId, Point destination) {
-        reservations.add(new Reservation(start, end, agvId, destination));
+    public void addReservation(int start, int end, int agvId, int destinationId) {
+        reservations.add(new Reservation(start, end, agvId, destinationId));
         Collections.sort(reservations);
+    }
+
+    /*
+    Evaporation
+     */
+    public void evaporate() {
+        List<Reservation> toRemove = new ArrayList<>();
+        for (Reservation reservation: reservations) {
+            reservation.evaporate();
+            if (! reservation.hasTimeToLive()) {
+                toRemove.add(reservation);
+            }
+        }
+
+        reservations.removeAll(toRemove);
+    }
+
+    public void advanceTime(int currentTime) {
+        List<Reservation> toRemove = new ArrayList<>();
+        for (Reservation reservation: reservations) {
+            if (reservation.endTimePassed(currentTime)) {
+                toRemove.add(reservation);
+            }
+        }
+
+        reservations.removeAll(toRemove);
     }
 }

@@ -4,22 +4,37 @@ import com.github.rinde.rinsim.geom.Point;
 
 public class Neighbor {
 
+    /*
+    The point that connects the resource agent that
+        manages this neighbor object with the resource
+        agent that is stored in this neighbor object.
+     */
     private Point connection;
+
+    /*
+    The resource agent that is connected with the
+        resource agent that manages this neighbor
+        object through the point that is stored by
+        this neighbor object.
+     */
     private ResourceAgent agent;
 
 
+    /*
+    Constructor
+     */
     public Neighbor(Point connection)
             throws NullPointerException {
         if (connection == null) {
             throw new NullPointerException(
-                    "NEIGHBOR | GIVEN CONNECTION EQUAL TO NULL"
+                    "NEIGHBOR | GIVEN CONNECTION EQUALS TO NULL"
             );
         }
         this.connection = connection;
     }
 
     /*
-    CONNECTION
+    Connection
      */
     public boolean isValidConnection(Point aConnection) {
         return connection.equals(aConnection);
@@ -31,36 +46,64 @@ public class Neighbor {
 
 
     /*
-    AGENT
+    Agent
      */
     public boolean agentSet() {
         return (agent != null);
     }
 
-    public ResourceAgent getAgent() {
-        if (agent == null) {
-            System.out.println("NEIGHBOUR | REQUESTING AGENT THAT IS NOT BEEN SET YET");
-            System.out.println(connection);
+    public boolean matchesResourceId(int aResourceId)
+            throws IllegalStateException {
+        if (! agentSet()) {
+            throw new IllegalStateException(
+                    "NEIGHBOR | THIS NEIGHBOR DOES NOT YET CONTAIN A RESOURCE AGENT"
+            );
+        }
+        return getResourceId() == aResourceId;
+    }
+
+    public int getResourceId() throws IllegalStateException {
+        if (! agentSet()) {
+            throw new IllegalStateException(
+                    "NEIGHBOR | THIS NEIGHBOR DOES NOT YET CONTAIN A RESOURCE AGENT"
+            );
+        }
+        return agent.getResourceId();
+    }
+
+    public ResourceAgent getAgent()
+            throws IllegalStateException {
+        if (! agentSet()) {
+            throw new IllegalStateException(
+                    "NEIGHBOR |THIS NEIGHBOR DOES NOT YET CONTAIN A RESOURCE AGENT"
+            );
         }
         return agent;
     }
 
-    public void setAgent(ResourceAgent agent) {
+    public void setAgent(ResourceAgent agent)
+            throws NullPointerException, IllegalStateException {
         if (agent == null) {
-            System.out.println("SETTING AGENT TO NULL");
+            throw new NullPointerException(
+                    "NEIGHBOR | THE GIVEN RESOURCE AGENT EQUALS NULL"
+            );
         } else if (this.agent != null) {
-            System.out.println("NEIGHBOUR | SETTING AGENT WHILE NEIGHBOUR IS ALREADY SET");
-            System.out.println(connection);
+            throw new IllegalStateException(
+                    "NEIGHBOR | THIS NEIGHBORS RESOURCE AGENT IS ALREADY SET"
+            );
         }
         this.agent = agent;
     }
 
+    /*
+    String
+     */
     @Override
     public String toString() {
-        if (agent != null) {
-            return "Neighbor " + agent.getClass() +" :"+ connection.toString();
+        if (agentSet()) {
+            return "Neighbor " + getAgent().getClass() +": "+ getConnection().toString();
         } else {
-            return "Neighbor (no agent set): " + connection.toString();
+            return "Neighbor (no agent set): " + getConnection().toString();
         }
     }
 }
