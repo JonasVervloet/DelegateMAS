@@ -70,10 +70,11 @@ public class Schedule {
         return validReservations;
     }
 
-    public List<Reservation> getReservationsWithLeftOverlap(int start, int end) {
+    public List<Reservation> getReservationsWithLeftOverlap(int start, int end, int agvId) {
         List<Reservation> validReservations = new ArrayList<>();
         for (Reservation reservation: reservations) {
-            if (reservation.leftOverlapWithOther(start, end)) {
+            if (! reservation.matchesAgvId(agvId) &&
+                    reservation.leftOverlapWithOther(start, end)) {
                 validReservations.add(reservation);
             }
         }
@@ -81,10 +82,11 @@ public class Schedule {
         return validReservations;
     }
 
-    public List<Reservation> getReservationsWithRightOverlap(int start, int end) {
+    public List<Reservation> getReservationsWithRightOverlap(int start, int end, int agvId) {
         List<Reservation> validReservations = new ArrayList<>();
         for (Reservation reservation: reservations) {
-            if (reservation.rightOverlapWithOther(start, end)) {
+            if (! reservation.matchesAgvId(agvId) &&
+                    reservation.rightOverlapWithOther(start, end)) {
                 validReservations.add(reservation);
             }
         }
@@ -92,10 +94,11 @@ public class Schedule {
         return validReservations;
     }
 
-    public List<Reservation> getReservationsWithin(int start, int end) {
+    public List<Reservation> getReservationsWithin(int start, int end, int agvId) {
         List<Reservation> validReservations = new ArrayList<>();
         for (Reservation reservation: reservations) {
-            if (reservation.fallsWithinOther(start, end)) {
+            if (! reservation.matchesAgvId(agvId) &&
+                    reservation.fallsWithinOther(start, end)) {
                 validReservations.add(reservation);
             }
         }
@@ -103,10 +106,11 @@ public class Schedule {
         return validReservations;
     }
 
-    public List<Reservation> getReservationsThatSpan(int start, int end) {
+    public List<Reservation> getReservationsThatSpan(int start, int end, int agvId) {
         List<Reservation> validReservations = new ArrayList<>();
         for (Reservation reservation: reservations) {
-            if (reservation.spansOther(start, end)) {
+            if (! reservation.matchesAgvId(agvId) &&
+                    reservation.spansOther(start, end)) {
                 validReservations.add(reservation);
             }
         }
@@ -143,5 +147,12 @@ public class Schedule {
         }
 
         reservations.removeAll(toRemove);
+    }
+
+    public void output() {
+        System.out.println("Schedule");
+        for (Reservation reservation: reservations) {
+            System.out.println(reservation);
+        }
     }
 }

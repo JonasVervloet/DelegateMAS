@@ -64,7 +64,7 @@ public class ResourceTable {
     public List<ResourceAgent> getIntersectionAgents() {
         List<ResourceAgent> agents = new ArrayList<>();
         for (ResourceAgent agent: table.values()) {
-            if (agent.isIntersectionAgent()) {
+            if (agent.isIntersectionAgent() && ! agents.contains(agent)) {
                 agents.add(agent);
             }
         }
@@ -74,18 +74,18 @@ public class ResourceTable {
     public List<ResourceAgent> getRoadAgents() {
         List<ResourceAgent> agents = new ArrayList<>();
         for (ResourceAgent agent: table.values()) {
-            if (agent.isRoadAgent()) {
+            if (agent.isRoadAgent() && ! agents.contains(agent)) {
                 agents.add(agent);
             }
         }
         return agents;
     }
 
-    public List<ResourceAgent> getStorageAgents() {
-        List<ResourceAgent> agents = new ArrayList<>();
+    public List<PDAgent> getStorageAgents() {
+        List<PDAgent> agents = new ArrayList<>();
         for (ResourceAgent agent: table.values()) {
-            if (agent.isStorageSpace()) {
-                agents.add(agent);
+            if (agent.isStorageSpace() && ! agents.contains(agent)) {
+                agents.add((PDAgent) agent);
             }
         }
         return agents;
@@ -94,17 +94,28 @@ public class ResourceTable {
     public List<ResourceAgent> getMachineAgents() {
         List<ResourceAgent> agents = new ArrayList<>();
         for (ResourceAgent agent: table.values()) {
-            if (agent.isMachineAgent()) {
+            if (agent.isMachineAgent() && ! agents.contains(agent)) {
                 agents.add(agent);
             }
         }
         return agents;
     }
 
+    public List<Integer> getDeliveryIds() {
+        List<ResourceAgent> agents = getDeliveryAgents();
+        List<Integer> ids = new ArrayList<>();
+        for (ResourceAgent agent: agents) {
+            if (agent.isDeliveryPoint()) {
+                ids.add(agent.getResourceId());
+            }
+        }
+        return ids;
+    }
+
     public List<ResourceAgent> getDeliveryAgents() {
         List<ResourceAgent> agents = new ArrayList<>();
         for (ResourceAgent agent: table.values()) {
-            if (agent.isDeliveryPoint()) {
+            if (agent.isDeliveryPoint() && ! agents.contains(agent)) {
                 agents.add(agent);
             }
         }
@@ -112,7 +123,13 @@ public class ResourceTable {
     }
 
     public List<ResourceAgent> getAllResourceAgents() {
-        return new ArrayList<>(table.values());
+        List<ResourceAgent> agents = new ArrayList<>();
+        for (ResourceAgent agent: table.values()) {
+            if (! agents.contains(agent)) {
+                agents.add(agent);
+            }
+        }
+        return agents;
     }
 
     public void connectResources() {

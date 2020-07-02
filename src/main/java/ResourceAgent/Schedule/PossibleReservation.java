@@ -184,4 +184,10 @@ public class PossibleReservation {
                 .getOverlappingInterval(next.getArrivalInterval())
                 .decrementInterval();
     }
+
+    @Override
+    public String toString() {
+        return "Arrival Interval: " + getArrivalInterval() +
+                "Departure Interval: " + getDepartureInterval();
+    }
 }

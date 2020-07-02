@@ -75,6 +75,10 @@ public class ExplorationMAS extends DelegateMAS {
         return agent.getAgvId();
     }
 
+    private int getCurrentTime() {
+        return agent.getCurrentTime();
+    }
+
     private List<Integer> getOrderDestinations() {
         return agent.getOrderDestinations();
     }
@@ -90,11 +94,13 @@ public class ExplorationMAS extends DelegateMAS {
     protected void takeAction() {
         if (carriesOrder()) {
             sendExplorationAnt(
-                    new ExplorationAnt(getAgvId(), getOrderDestinations(), getRandomGenerator())
+                    new ExplorationAnt(getAgvId(), getOrderDestinations(),
+                            getRandomGenerator(), getCurrentTime())
             );
         } else {
             sendExplorationAnt(
-                    new ExplorationAnt(getAgvId(), getRandomGenerator())
+                    new ExplorationAnt(getAgvId(),
+                            getRandomGenerator(), getCurrentTime())
             );
         }
     }
@@ -163,6 +169,7 @@ public class ExplorationMAS extends DelegateMAS {
     }
 
     public void processExploredRoute(Route route) {
+        route.cleanRoute();
         routes.add(route);
     }
 

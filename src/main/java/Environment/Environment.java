@@ -4,6 +4,7 @@ import com.github.rinde.rinsim.geom.LengthData;
 import com.github.rinde.rinsim.geom.ListenableGraph;
 
 import ResourceAgent.ResourceAgent;
+import ResourceAgent.PDAgent;
 
 import java.util.List;
 
@@ -27,12 +28,16 @@ public class Environment {
         return resources.checkAllResourcesSet();
     }
 
-    public List<ResourceAgent> getStorageAgents() {
+    public List<PDAgent> getStorageAgents() {
         return resources.getStorageAgents();
     }
 
     public List<ResourceAgent> getDeliveryAgents() {
         return resources.getDeliveryAgents();
+    }
+
+    public List<Integer> getDeliveryIds() {
+        return resources.getDeliveryIds();
     }
 
     public List<ResourceAgent> getAllResourceAgents() {

@@ -67,9 +67,10 @@ public class ScheduleManager {
     /*
     Schedule
      */
-    public boolean isValidToRegister(int agvId) {
+    public boolean isValidToRegister(int agvId, int currentTime) {
         for (Reservation reservation: schedule.getReservationsForAgvId(agvId)) {
-            if (reservation.getStartTime() == 0) {
+            if (reservation.getStartTime() <= currentTime &&
+                    ! reservation.endTimePassed(currentTime)) {
                 return true;
             }
         }
@@ -83,8 +84,9 @@ public class ScheduleManager {
     public List<PossibleReservation> getPossibleReservations(ScheduleRequest request) {
         int start = request.getStart();
         int end = request.getEnd();
+        int agvId = request.getAgvId();
 
-        List<Reservation> span = schedule.getReservationsThatSpan(start, end);
+        List<Reservation> span = schedule.getReservationsThatSpan(start, end, agvId);
         if (span.size() > 0) {
             return new ArrayList<>();
         }
@@ -99,10 +101,11 @@ public class ScheduleManager {
     private List<PossibleReservation> createPossibleReservations(ScheduleRequest request) {
         int start = request.getStart();
         int end = request.getEnd();
+        int agvId = request.getAgvId();
 
-        List<Reservation> leftOverlap = schedule.getReservationsWithLeftOverlap(start, end);
-        List<Reservation> within = schedule.getReservationsWithin(start, end);
-        List<Reservation> rightOverlap = schedule.getReservationsWithRightOverlap(start, end);
+        List<Reservation> leftOverlap = schedule.getReservationsWithLeftOverlap(start, end, agvId);
+        List<Reservation> within = schedule.getReservationsWithin(start, end, agvId);
+        List<Reservation> rightOverlap = schedule.getReservationsWithRightOverlap(start, end, agvId);
 
         List<PossibleReservation> possibleReservations = new ArrayList<>();
 
@@ -193,10 +196,11 @@ public class ScheduleManager {
     private List<Interval> getOccupiedIntervals(ScheduleRequest request) {
         int start = request.getStart();
         int end = request.getEnd();
+        int agvId = request.getAgvId();
 
-        List<Reservation> leftOverlap = schedule.getReservationsWithLeftOverlap(start, end);
-        List<Reservation> within = schedule.getReservationsWithin(start, end);
-        List<Reservation> rightOverlap = schedule.getReservationsWithRightOverlap(start, end);
+        List<Reservation> leftOverlap = schedule.getReservationsWithLeftOverlap(start, end, agvId);
+        List<Reservation> within = schedule.getReservationsWithin(start, end, agvId);
+        List<Reservation> rightOverlap = schedule.getReservationsWithRightOverlap(start, end, agvId);
 
         List<Integer> capacitySlots = createCapacitySlots(request);
         adjustCapacitySlotsList(capacitySlots, leftOverlap, request);
@@ -226,16 +230,18 @@ public class ScheduleManager {
             List<Integer>capacitySlots, Reservation reservation, ScheduleRequest request) {
         assert(capacitySlots.size() == request.getEnd() - request.getStart() + 1);
 
-        int maxStart = Math.max(request.getStart(), reservation.getStartTime()) - request.getStart();
-        int minEnd = Math.min(request.getEnd(), reservation.getEndTime()) - request.getStart();
+        if (! reservation.matchesAgvId(request.getAgvId())) {
+            int maxStart = Math.max(request.getStart(), reservation.getStartTime()) - request.getStart();
+            int minEnd = Math.min(request.getEnd(), reservation.getEndTime()) - request.getStart();
 
-        for (int i=maxStart; i<=minEnd; i++) {
-            int capacity = capacitySlots.get(i);
-            capacitySlots.remove(i);
-            if (reservation.matchingDestination(request.getDestinationId())) {
-                capacitySlots.add(i, capacity - 1);
-            } else {
-                capacitySlots.add(i, 0);
+            for (int i=maxStart; i<=minEnd; i++) {
+                int capacity = capacitySlots.get(i);
+                capacitySlots.remove(i);
+                if (reservation.matchingDestination(request.getDestinationId())) {
+                    capacitySlots.add(i, capacity - 1);
+                } else {
+                    capacitySlots.add(i, 0);
+                }
             }
         }
     }

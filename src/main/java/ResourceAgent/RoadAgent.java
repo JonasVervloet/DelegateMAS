@@ -34,6 +34,8 @@ public class RoadAgent extends InfrastructureAgent {
         super(getCapacity(vertex1, vertex2), getTraversalTime(vertex1, vertex2));
         neighbor1 = new Neighbor(vertex1);
         neighbor2 = new Neighbor(vertex2);
+
+        setResourceId();
     }
 
 
@@ -83,6 +85,7 @@ public class RoadAgent extends InfrastructureAgent {
         return getOtherNeighborAgent(firstNeighborId).getResourceId();
     }
 
+    @Override
     public ResourceAgent getNeighborAgent(int resourceId)
             throws IllegalArgumentException {
         if (! isValidNeighborId(resourceId)) {
@@ -95,6 +98,21 @@ public class RoadAgent extends InfrastructureAgent {
             return neighbor1.getAgent();
         } else {
             return neighbor2.getAgent();
+        }
+    }
+
+    @Override
+    public Point getConnectionWithNeighbor(int resourceId) {
+        if (! isValidNeighborId(resourceId)) {
+            throw new IllegalArgumentException(
+                    "ROAD AGENT | THIS AGENT HAS NO NEIGHBOR WITH GIVEN ID"
+            );
+        }
+
+        if (neighbor1.matchesResourceId(resourceId)) {
+            return neighbor1.getConnection();
+        } else {
+            return neighbor2.getConnection();
         }
     }
 

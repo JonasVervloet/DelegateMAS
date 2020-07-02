@@ -55,6 +55,10 @@ public abstract class AbstractAnt implements AntInterface {
     /*
     Resource Visits
      */
+    protected int getNbOfVisitedResource() {
+        return visitedResourceIds.size();
+    }
+
     public boolean alreadyVisited(int resourceId) {
         return visitedResourceIds.contains(resourceId);
     }

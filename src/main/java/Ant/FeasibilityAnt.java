@@ -29,9 +29,10 @@ public abstract class FeasibilityAnt extends AbstractAnt {
     /*
     Constructor
      */
-    public FeasibilityAnt() {
+    public FeasibilityAnt(int originalId) {
         hopCount = 0;
         distanceTraveled = 0;
+        visitResource(originalId);
     }
 
     public FeasibilityAnt(FeasibilityAnt otherAnt) {

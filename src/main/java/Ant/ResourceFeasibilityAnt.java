@@ -11,6 +11,7 @@ public class ResourceFeasibilityAnt extends FeasibilityAnt {
     Constructor
      */
     public ResourceFeasibilityAnt(int resourceId) {
+        super(resourceId);
         this.resourceId = resourceId;
     }
 

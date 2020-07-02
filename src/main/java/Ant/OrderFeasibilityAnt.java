@@ -10,7 +10,8 @@ public class OrderFeasibilityAnt extends FeasibilityAnt {
     /*
     Constructor
      */
-    public OrderFeasibilityAnt(int packageId) {
+    public OrderFeasibilityAnt(int packageId, int originalId) {
+        super(originalId);
         this.packageId = packageId;
     }
 

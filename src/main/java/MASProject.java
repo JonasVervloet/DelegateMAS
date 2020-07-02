@@ -1,4 +1,8 @@
+import Order.RequestManager;
 import ResourceAgent.ResourceAgent;
+import ResourceAgent.PDAgent;
+import AGVAgent.AGVAgent;
+
 import com.github.rinde.rinsim.core.model.comm.CommModel;
 import com.github.rinde.rinsim.core.Simulator;
 import com.github.rinde.rinsim.core.model.pdp.DefaultPDPModel;
@@ -17,8 +21,6 @@ import Environment.Environment;
 import Environment.EnvironmentCreator;
 
 import java.util.List;
-//import ResourceAgent.PDAgent;
-//import ResourceAgent.ResourceAgent;
 
 /**
  * Example showcasing the {@link CollisionGraphRoadModelImpl} with a
@@ -77,7 +79,7 @@ public class MASProject {
                 .addModel(viewBuilder)
                 .addModel(CommModel.builder())
                 .setTimeUnit(SI.MILLI(SI.SECOND))
-                .setTickLength(1000)
+                .setTickLength(10)
                 .build();
 
         final RoadModel roadModel = sim.getModelProvider().getModel(
@@ -87,22 +89,23 @@ public class MASProject {
         );
         final RandomGenerator ran = sim.getRandomGenerator();
 
-        List<ResourceAgent> storageAgents = env.getStorageAgents();
+        List<ResourceAgent> agents = env.getAllResourceAgents();
+        for (ResourceAgent agent: agents) {
+            sim.register(agent);
+        }
 
-//        List<ResourceAgent> agents = env.getAllResourceAgents();
-//        for (ResourceAgent agent: agents) {
-//            sim.register(agent);
-//        }
+        List<PDAgent> storageAgents = env.getStorageAgents();
+        RequestManager.createManager(storageAgents, env.getDeliveryIds(),
+                orderrate, sim);
+        sim.register(RequestManager.getRequestManager());
 
-//        OrderManager mgr = new OrderManager(storageAgents, env.getDeliveryAgents(),
-//                orderrate, sim);
-//        sim.register(mgr);
-
-//        for (int i = 0; i < nbAGVs; i++) {
-//            PDAgent start = storageAgents.get(ran.nextInt(storageAgents.size()));
-//            System.out.println(start.getConnection());
-//            sim.register(new AGVAgent.AGVAgent("AGV" + i, start));
-//        }
+        for (int i = 0; i < nbAGVs; i++) {
+            PDAgent start = storageAgents.get(ran.nextInt(storageAgents.size()));
+            System.out.println(start.getConnection());
+            AGVAgent agvAgent = new AGVAgent(start, ran);
+            System.out.println("AGV agent: " + agvAgent.getAgvId());
+            sim.register(agvAgent);
+        }
 
         sim.start();
     }

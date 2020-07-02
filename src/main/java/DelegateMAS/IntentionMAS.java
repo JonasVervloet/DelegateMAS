@@ -3,6 +3,7 @@ package DelegateMAS;
 import AGVAgent.AGVAgent;
 import Ant.IntentionAnt;
 import CommunicationManager.AGVCommunication;
+import ResourceAgent.ResourceAgent;
 import com.google.common.base.Optional;
 
 public class IntentionMAS extends DelegateMAS {
@@ -32,7 +33,7 @@ public class IntentionMAS extends DelegateMAS {
 
     private boolean currentAntValidated;
 
-    private Optional<Intention> newIntention;
+    private Optional<Route> newIntention;
 
     private Optional<Integer> newIntentionAntId;
 
@@ -40,7 +41,7 @@ public class IntentionMAS extends DelegateMAS {
     /*
     Constructor
      */
-    public IntentionMAS(AGVAgent agent)
+    public IntentionMAS(AGVAgent agent, IntentionEntry entry)
             throws NullPointerException {
         super(intentionActionRate);
 
@@ -51,6 +52,8 @@ public class IntentionMAS extends DelegateMAS {
         }
         this.agent = agent;
 
+        this.currentIntention = new Intention(0, 0, entry);
+        this.currentAntValidated = true;
         this.newIntention = Optional.absent();
         this.newIntentionAntId = Optional.absent();
     }
@@ -74,7 +77,7 @@ public class IntentionMAS extends DelegateMAS {
         currentAntValidated = false;
 
         if (newIntention.isPresent()) {
-            IntentionAnt newAnt = new IntentionAnt(getAgvId(), newIntention.get());
+            IntentionAnt newAnt = new IntentionAnt(getAgvId(), convertNewIntention());
             newIntentionAntId = Optional.of(newAnt.getId());
             sendIntentionAnt(newAnt);
         }
@@ -109,9 +112,11 @@ public class IntentionMAS extends DelegateMAS {
             }
         } else if (ant.getId() == newIntentionAntId.get()) {
             if (ant.hasSucceeded()) {
-                currentIntention = newIntention.get();
+                currentIntention = convertNewIntention();
                 currentIntentionAntId = newIntentionAntId.get();
                 currentAntValidated = true;
+            } else {
+                invalidateRoute(getNewIntentionRoute());
             }
             newIntention = Optional.absent();
             newIntentionAntId = Optional.absent();
@@ -149,8 +154,43 @@ public class IntentionMAS extends DelegateMAS {
     public void considerChangingIntention() {
         Route newBest = getExplorationMAS().getBestRoute();
 
-        if (shouldChangeIntention(newBest)) {
-            newIntention = Optional.of(newBest.convertToIntention());
+        if (newBest != null && shouldChangeIntention(newBest)) {
+            newIntention = Optional.of(newBest);
         }
+    }
+
+    private void invalidateRoute(Route route) {
+        getExplorationMAS().invalidateRoute(route);
+    }
+
+    /*
+    Intention
+     */
+    public boolean readyToChangeToNextEntry(int currentTime) {
+        return currentTime == currentIntention.getEntry(1).getStartTime();
+    }
+
+    public int getNbOfEntries() {
+        return currentIntention.getNbOfEntries();
+    }
+
+    public int getIdOfFirstEntry() {
+        return currentIntention.getIdOfEntry(0);
+    }
+
+    public int getIdOfSecondEntry() {
+        return currentIntention.getIdOfEntry(1);
+    }
+
+    public void changeToNextDestination() {
+        currentIntention.changToNextDestination();
+    }
+
+    public Route getNewIntentionRoute() {
+        return newIntention.get();
+    }
+
+    public Intention convertNewIntention() {
+        return getNewIntentionRoute().convertToIntention();
     }
 }

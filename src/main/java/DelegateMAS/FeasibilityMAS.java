@@ -5,6 +5,8 @@ import Ant.OrderFeasibilityAnt;
 import Ant.ResourceFeasibilityAnt;
 import ResourceAgent.PDAgent;
 import Order.Order;
+import ResourceAgent.ResourceAgent;
+import com.github.rinde.rinsim.geom.Point;
 import com.google.common.base.Optional;
 
 import java.util.List;
@@ -44,6 +46,7 @@ public class FeasibilityMAS extends DelegateMAS {
             );
         }
         this.agent = agent;
+        this.order = Optional.absent();
     }
 
 
@@ -68,12 +71,7 @@ public class FeasibilityMAS extends DelegateMAS {
     Order
      */
     public boolean harborsOrder() {
-        try {
-            order.get();
-            return true;
-        } catch (NoSuchElementException e) {
-            return false;
-        }
+        return order.isPresent();
     }
 
     public boolean couldPickupOrder(int pickupTime) {
@@ -103,6 +101,13 @@ public class FeasibilityMAS extends DelegateMAS {
         return getOrder().getDestinations();
     }
 
+    public Order pickupOrder() {
+        Order current = getOrder();
+        order = Optional.absent();
+        current.pickup();
+        return current;
+    }
+
     public void registerOrder(Order anOrder)
             throws IllegalStateException {
         if (harborsOrder()) {
@@ -113,11 +118,30 @@ public class FeasibilityMAS extends DelegateMAS {
         order = Optional.of(anOrder);
     }
 
+    public void reservePickup(int pickupTime, int agvId) {
+        assert(harborsOrder());
+        getOrder().reservePickup(pickupTime, agvId);
+    }
+
+    public void showOrder() {
+        if (harborsOrder()) {
+            getOrder().showAtPosition(getPosition());
+        }
+    }
+
     /*
     PD Agent
      */
     private int getResourceId() {
         return agent.getResourceId();
+    }
+
+    private Point getPosition() {
+        return getResourceAgent().getPosition().get();
+    }
+
+    private ResourceAgent getResourceAgent() {
+        return agent;
     }
 
     private void sendAnt(FeasibilityAnt ant) {
@@ -146,6 +170,6 @@ public class FeasibilityMAS extends DelegateMAS {
                     "FEASIBILITY MAS | CAN NOT SEND ORDER ANT WHEN NOT HARBORING ORDER"
             );
         }
-        return new OrderFeasibilityAnt(getOrderId());
+        return new OrderFeasibilityAnt(getOrderId(), getResourceId());
     }
 }

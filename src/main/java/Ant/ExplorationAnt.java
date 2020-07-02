@@ -225,24 +225,31 @@ public class ExplorationAnt extends AbstractAnt {
      */
     private boolean goingForward;
 
+    /*
+    The time when the ant was created.
+     */
+    private int startTime;
+
 
     /*
     Constructor
      */
-    public ExplorationAnt(int agvId, RandomGenerator rgn) {
+    public ExplorationAnt(int agvId, RandomGenerator rgn, int currentTime) {
         this.route = new Route();
         this.agvId = agvId;
         this.orderDestinations = Optional.absent();
         this.randomGenerator = rgn;
         this.goingForward = true;
+        this.startTime = currentTime;
     }
 
-    public ExplorationAnt(int agvId, List<Integer> orderDestinations, RandomGenerator rgn) {
+    public ExplorationAnt(int agvId, List<Integer> orderDestinations, RandomGenerator rgn, int currentTime) {
         this.route = new Route();
         this.agvId = agvId;
         this.orderDestinations = Optional.of(orderDestinations);
         this.randomGenerator = rgn;
         this.goingForward = true;
+        this.startTime = currentTime;
     }
 
     public ExplorationAnt(ExplorationAnt other) {
@@ -257,6 +264,7 @@ public class ExplorationAnt extends AbstractAnt {
         }
         this.randomGenerator = other.getRandomGenerator();
         this.goingForward = true;
+        this.startTime = other.startTime;
     }
 
 
@@ -269,6 +277,10 @@ public class ExplorationAnt extends AbstractAnt {
 
     public static int getLookAheadTime() {
         return lookAheadTime;
+    }
+
+    public int getExplorationTime() {
+        return startTime + getLookAheadTime();
     }
 
     public static void setLookAheadTime(int time)
@@ -292,7 +304,11 @@ public class ExplorationAnt extends AbstractAnt {
     Route
      */
     private int getNextEarliestArrival() {
-        return route.getNextEarliestArrival();
+        if (route.getRouteLength() == 0) {
+            return startTime;
+        } else {
+            return route.getNextEarliestArrival();
+        }
     }
 
     protected Route getRoute() {
@@ -373,6 +389,8 @@ public class ExplorationAnt extends AbstractAnt {
                     "EXPLORATION ANT | THE ANT IS ALREADY GOING BACKWARDS"
             );
         }
+        System.out.println("Exploration ant changing direction: agvId " + getAgvId());
+        System.out.println("Nb of visited resources: " + getNbOfVisitedResource());
         goingForward = false;
     }
 
@@ -381,11 +399,12 @@ public class ExplorationAnt extends AbstractAnt {
      */
     @Override
     public void visitRoadAgent(RoadCommunication roadCommunication) {
+        System.out.println("Exploration ant -- road agent: agv id " + getAgvId());
         if (isGoingForward()) {
             visitResource(roadCommunication.getResourceId());
 
             List<PossibleReservation> possReservations = roadCommunication.getPossibleReservations(
-                    getNextEarliestArrival(), getLookAheadTime(), getAgvId(), lastVisitedResourceId()
+                    getNextEarliestArrival(), getExplorationTime(), getAgvId(), lastVisitedResourceId()
             );
             filterPossibleReservations(possReservations);
             if (possReservations.size() > 0) {
@@ -412,22 +431,36 @@ public class ExplorationAnt extends AbstractAnt {
      */
     @Override
     public void visitIntersectionAgent(IntersectionCommunication intersectionCommunication) {
+        System.out.println("Exploration ant -- intersection agent: agv id " + getAgvId());
         if (isGoingForward()) {
             visitResource(intersectionCommunication.getResourceId());
 
             List<Pair<Integer, Integer>> minDistances;
             if (isSearchingPackage()) {
+                System.out.println("searching package");
                 minDistances = intersectionCommunication.getMinDistancesToOrder(lastVisitedResourceId());
             } else {
+                System.out.println("searching pd location");
                 minDistances = intersectionCommunication.getMinDistancesToResource(
                         getNextDestinationId(), lastVisitedResourceId()
                 );
             }
 
             boolean possReservationsFounded = false;
-            for (Pair<Integer, Float> pair: computeProbabilitiesForCloning(minDistances)) {
+            List<Pair<Integer, Float>> probabilities;
+            if (minDistances.size() == 0) {
+                List<Integer> ids = intersectionCommunication.
+                        getOtherNeighborIds(lastVisitedResourceId());
+                probabilities = new ArrayList<>();
+                for (Integer id: ids) {
+                    probabilities.add(new Pair(id, (float) 1/ids.size()));
+                }
+            } else {
+                probabilities = computeProbabilitiesForCloning(minDistances);
+            }
+            for (Pair<Integer, Float> pair: probabilities) {
                 List<PossibleReservation> possReservations = intersectionCommunication.getPossibleReservations(
-                        getNextEarliestArrival(), getLookAheadTime(), getAgvId(), pair.getKey()
+                        getNextEarliestArrival(), getExplorationTime(), getAgvId(), pair.getKey()
                 );
                 filterPossibleReservations(possReservations);
                 if (possReservations.size() > 0) {
@@ -435,6 +468,7 @@ public class ExplorationAnt extends AbstractAnt {
                 }
                 for (PossibleReservation possRes: possReservations) {
                     if (nextRandomNumber() <= pair.getValue()) {
+                        System.out.println("clone ant");
                         ExplorationAnt clone = cloneAnt();
                         clone.addRouteSlot(intersectionCommunication.getResourceId(), possRes);
                         intersectionCommunication.sendMessageToNeighbor(pair.getKey(), cloneAnt());
@@ -498,6 +532,7 @@ public class ExplorationAnt extends AbstractAnt {
      */
     @Override
     public void visitPDAgent(PDCommunication pdCommunication) {
+        System.out.println("Exploration ant -- PD agent: agv id " + getAgvId());
         if (isGoingForward()) {
             visitResource(pdCommunication.getResourceId());
 
@@ -506,7 +541,7 @@ public class ExplorationAnt extends AbstractAnt {
                         && pdCommunication.couldPickupOrder(getNextEarliestArrival())) {
                     List<PossibleReservation>  possReservations =
                             pdCommunication.getPossibleReservations(
-                                    getNextEarliestArrival(), getLookAheadTime(), getAgvId()
+                                    getNextEarliestArrival(), getExplorationTime(), getAgvId()
                             );
                     filterPossibleReservations(possReservations);
                     if (possReservations.size() > 0) {

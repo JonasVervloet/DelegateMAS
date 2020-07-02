@@ -50,11 +50,11 @@ public class ScheduleManagerTest {
      */
     @Test
     public void isValidToRegister() {
-        assertFalse(manager1.isValidToRegister(123));
+        assertFalse(manager1.isValidToRegister(123, 0));
         manager1.makeReservation(new ScheduleRequest(5,  9,  123, 987));
-        assertFalse(manager1.isValidToRegister(123));
+        assertFalse(manager1.isValidToRegister(123, 0));
         manager1.makeReservation(new ScheduleRequest(0, 4, 123, 987));
-        assertTrue(manager1.isValidToRegister(123));
+        assertTrue(manager1.isValidToRegister(123, 0));
     }
 
     /*

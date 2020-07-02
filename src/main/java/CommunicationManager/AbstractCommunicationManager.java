@@ -30,9 +30,11 @@ public abstract class AbstractCommunicationManager implements CommunicationManag
     @Override
     public void checkMessages() throws IllegalStateException {
         for (Message message: device.getUnreadMessages()) {
-            if (message instanceof AntInterface) {
-                this.handleAntMessage((AntInterface) message);
+            if (message.getContents() instanceof AntInterface) {
+                this.handleAntMessage((AntInterface) message.getContents());
             } else {
+                System.out.println(message.getClass());
+                System.out.println(message);
                 throw new IllegalStateException(
                         "ABSTRACT COMMUNICATION MANAGER | UNKNOWN MESSAGE, DOES NOT IMPLEMENT ANT INTERFACE"
                 );

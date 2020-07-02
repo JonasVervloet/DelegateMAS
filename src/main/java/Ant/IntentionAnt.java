@@ -247,6 +247,8 @@ public class IntentionAnt extends AbstractAnt {
      */
     @Override
     public void visitRoadAgent(RoadCommunication roadCommunication) {
+        System.out.println("Intention ant -- road agent: agv id " + getAgvId());
+
         assert(roadCommunication.getResourceId() == getIdOfCurrentEntry());
 
         if (isGoingForward()) {
@@ -284,6 +286,7 @@ public class IntentionAnt extends AbstractAnt {
      */
     @Override
     public void visitIntersectionAgent(IntersectionCommunication intersectionCommunication) {
+        System.out.println("Intention ant -- intersection agent: agv id " + getAgvId());
         assert(intersectionCommunication.getResourceId() == getIdOfCurrentEntry());
 
         if (isGoingForward()) {
@@ -323,6 +326,8 @@ public class IntentionAnt extends AbstractAnt {
      */
     @Override
     public void visitPDAgent(PDCommunication pdCommunication) {
+        System.out.println("Intention ant -- pd agent: agv id " + getAgvId());
+
         assert(pdCommunication.getResourceId() == getIdOfCurrentEntry());
 
         if (isGoingForward()) {
@@ -338,7 +343,11 @@ public class IntentionAnt extends AbstractAnt {
                 } else {
                     succeed();
                     changeToGoingBackwards();
-                    pdCommunication.sendMessageToNeighbor(this);
+                    if (getNbOfVisitedResource() == 1) {
+                        pdCommunication.sendMessageToAGVAgent(getAgvId(), this);
+                    } else {
+                        pdCommunication.sendMessageToNeighbor(this);
+                    }
                 }
             } catch (IllegalArgumentException e) {
                 changeToGoingBackwards();

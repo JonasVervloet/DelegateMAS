@@ -62,41 +62,41 @@ public class ScheduleTest {
     @Test
     public void reservationsWithLeftOverlap() {
         assertEquals(1,
-                schedule1.getReservationsWithLeftOverlap(5, 20).size());
+                schedule1.getReservationsWithLeftOverlap(5, 20, 321).size());
         assertEquals(2,
-                schedule1.getReservationsWithLeftOverlap(14, 20).size());
+                schedule1.getReservationsWithLeftOverlap(14, 20, 321).size());
     }
 
     @Test
     public void reservationsWithRightOverlap() {
         assertEquals(1,
-                schedule1.getReservationsWithRightOverlap(5, 20).size());
+                schedule1.getReservationsWithRightOverlap(5, 20, 321).size());
         assertEquals(2,
-                schedule1.getReservationsWithRightOverlap(5, 13).size());
+                schedule1.getReservationsWithRightOverlap(5, 13, 321).size());
     }
 
     @Test
     public void reservationsWithin() {
         assertEquals(3,
-                schedule1.getReservationsWithin(5, 20).size());
+                schedule1.getReservationsWithin(5, 20, 321).size());
         assertEquals(3,
-                schedule1.getReservationsWithin(7, 16).size());
+                schedule1.getReservationsWithin(7, 16, 321).size());
         assertEquals(2,
-                schedule1.getReservationsWithin(8, 20).size());
+                schedule1.getReservationsWithin(8, 20, 321).size());
         assertEquals(2,
-                schedule1.getReservationsWithin(5, 15).size());
+                schedule1.getReservationsWithin(5, 15, 321).size());
     }
 
     @Test
     public void reservationsThatSpan() {
         assertEquals(1,
-                schedule1.getReservationsThatSpan(11, 12).size());
+                schedule1.getReservationsThatSpan(11, 12, 321).size());
         assertEquals(1,
-                schedule1.getReservationsThatSpan(11, 13).size());
+                schedule1.getReservationsThatSpan(11, 13, 321).size());
         assertEquals(1,
-                schedule1.getReservationsThatSpan(14, 15).size());
+                schedule1.getReservationsThatSpan(14, 15, 321).size());
         assertEquals(0,
-                schedule1.getReservationsThatSpan(5, 20).size());
+                schedule1.getReservationsThatSpan(5, 20, 321).size());
     }
 
     @Test

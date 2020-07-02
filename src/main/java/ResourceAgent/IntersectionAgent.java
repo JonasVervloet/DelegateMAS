@@ -2,6 +2,7 @@ package ResourceAgent;
 
 import CommunicationManager.CommunicationManagerInterface;
 import CommunicationManager.IntersectionCommunication;
+import Order.Order;
 import ResourceAgent.OrderMap.OrderManager;
 import ResourceAgent.ResourceMap.ResourceManager;
 import com.github.rinde.rinsim.core.model.comm.CommDeviceBuilder;
@@ -39,7 +40,7 @@ public class IntersectionAgent extends InfrastructureAgent {
         The manager handles all feasibility interaction
         that involves resources.
      */
-    private OrderManager packageManager;
+    private OrderManager orderManager;
 
 
 
@@ -60,8 +61,7 @@ public class IntersectionAgent extends InfrastructureAgent {
         neighbours.add(new Neighbor(vertex2));
         neighbours.add(new Neighbor(vertex3));
 
-        resourceManager = new ResourceManager(getNeighborIds());
-        packageManager = new OrderManager(getNeighborIds());
+        setResourceId();
     }
 
     public IntersectionAgent(Point vertex1, Point vertex2, Point vertex3, Point vertex4) {
@@ -105,6 +105,33 @@ public class IntersectionAgent extends InfrastructureAgent {
             }
         }
         return false;
+    }
+
+    @Override
+    public ResourceAgent getNeighborAgent(int resourceId)
+            throws IllegalArgumentException {
+        if (! isValidNeighborId(resourceId)) {
+            throw new IllegalArgumentException(
+                    "INTERSECTION AGENT | THIS AGENT HAS NO NEIGHBOR WITH GIVEN ID"
+            );
+        }
+        return getNeighborWithId(resourceId);
+    }
+
+    @Override
+    public Point getConnectionWithNeighbor(int resourceId) {
+        if (! isValidNeighborId(resourceId)) {
+            throw new IllegalArgumentException(
+                    "INTERSECTION AGENT | THIS AGENT HAS NO NEIGHBOR WITH GIVEN ID"
+            );
+        }
+        Point connection = null;
+        for (Neighbor neighbor: neighbours) {
+            if (neighbor.matchesResourceId(resourceId)) {
+                connection = neighbor.getConnection();
+            }
+        }
+        return connection;
     }
 
     private List<Integer> getNeighborIds() {
@@ -169,6 +196,10 @@ public class IntersectionAgent extends InfrastructureAgent {
                     "INTERSECTION AGENT | CONNECTION NOT PART OF THIS INTERSECTION"
             );
         }
+        if (checkAllNeighborsSet()) {
+            setResourceManager();
+            setOrderManager();
+        }
     }
 
     @Override
@@ -186,6 +217,10 @@ public class IntersectionAgent extends InfrastructureAgent {
             throw new IllegalArgumentException(
                     "INTERSECTION AGENT | CONNECTING NEIGHBOR WITH NO ADJACENT CONNECTIONS"
             );
+        }
+        if (checkAllNeighborsSet()) {
+            setResourceManager();
+            setOrderManager();
         }
     }
 
@@ -225,11 +260,19 @@ public class IntersectionAgent extends InfrastructureAgent {
         return resourceManager;
     }
 
+    private void setResourceManager() {
+        resourceManager = new ResourceManager(getNeighborIds());
+    }
+
     /*
     Order Manager
      */
     public OrderManager getOrderManager() {
-        return packageManager;
+        return orderManager;
+    }
+
+    private void setOrderManager() {
+        orderManager = new OrderManager(getNeighborIds());
     }
 
     /*

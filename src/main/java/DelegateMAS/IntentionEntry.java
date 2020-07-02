@@ -61,7 +61,7 @@ public class IntentionEntry {
     Start
      */
     private boolean isValidStart(int start) {
-        return start > 0;
+        return start >= 0;
     }
 
     public int getStartTime() {
@@ -72,7 +72,7 @@ public class IntentionEntry {
     End
      */
     private boolean isValidEnd(int end) {
-        return end > 0;
+        return end > start;
     }
 
     public int getEndTime() {

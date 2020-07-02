@@ -1,7 +1,10 @@
 package ResourceAgent;
 
+import AGVAgent.AGVAgent;
 import ResourceAgent.Schedule.ScheduleManager;
 import com.github.rinde.rinsim.core.model.comm.CommUser;
+import com.github.rinde.rinsim.core.model.road.RoadModel;
+import com.github.rinde.rinsim.core.model.road.RoadUser;
 import com.github.rinde.rinsim.core.model.time.TickListener;
 import com.github.rinde.rinsim.core.model.time.TimeLapse;
 import com.github.rinde.rinsim.geom.Point;
@@ -59,9 +62,9 @@ public abstract class ResourceAgent implements TickListener, CommUser {
                     "RESOURCE AGENT | THE GIVEN TRAVERSAL TIME IS NOT A VALID ONE"
             );
         }
-        scheduleManager = new ScheduleManager(capacity, traversalTime);
-        agvManager = new AGVManager();
-        tickCounter = 0;
+        this.scheduleManager = new ScheduleManager(capacity, traversalTime);
+        this.agvManager = new AGVManager(this);
+        this.tickCounter = 0;
     }
 
     /*
@@ -73,6 +76,10 @@ public abstract class ResourceAgent implements TickListener, CommUser {
 
     public boolean isRoadAgent() {
         return false;
+    }
+
+    public boolean isPDAgent() {
+        return (isDeliveryPoint() || isMachineAgent() || isStorageSpace());
     }
 
     public boolean isDeliveryPoint() {
@@ -112,6 +119,10 @@ public abstract class ResourceAgent implements TickListener, CommUser {
      */
     public abstract boolean checkAllNeighborsSet();
 
+    public abstract Point getConnectionWithNeighbor(int resourceId);
+
+    public abstract ResourceAgent getNeighborAgent(int resourceId);
+
     public abstract void addNeighbor(Point connection, ResourceAgent agent) throws IllegalArgumentException;
 
     public abstract void connectNeighbor(ResourceAgent agent) throws IllegalArgumentException;
@@ -136,6 +147,14 @@ public abstract class ResourceAgent implements TickListener, CommUser {
      */
     public AGVManager getAgvManager() {
         return agvManager;
+    }
+
+    public void registerAgvAgent(AGVAgent agvAgent) {
+        getAgvManager().registerAGVAgent(agvAgent);
+    }
+
+    public void unregisterAgvAgent(int agvId) {
+        getAgvManager().unregisterAGVAgent(agvId);
     }
 
     /*
@@ -178,10 +197,6 @@ public abstract class ResourceAgent implements TickListener, CommUser {
         tickCounter += 1;
     }
 
-    private void resetTickCounter() {
-        tickCounter = 0;
-    }
-
     /*
     Tick Listener
      */
@@ -190,7 +205,6 @@ public abstract class ResourceAgent implements TickListener, CommUser {
         scheduleManager.tick();
         incrementTickCounter();
         if (tickCounterEqualsFrequency()) {
-            resetTickCounter();
             scheduleManager.advanceTime(getCurrentTime());
         }
     }

@@ -1,15 +1,13 @@
 package ResourceAgent;
 
-import CommunicationManager.CommunicationManagerInterface;
 import CommunicationManager.PDCommunication;
 import DelegateMAS.FeasibilityMAS;
 import Order.Order;
+import Order.RequestManager;
 import com.github.rinde.rinsim.core.model.comm.CommDeviceBuilder;
 import com.github.rinde.rinsim.core.model.time.TimeLapse;
 import com.github.rinde.rinsim.geom.Point;
 import com.google.common.base.Optional;
-
-import javax.swing.text.html.Option;
 
 
 public class PDAgent extends ResourceAgent {
@@ -101,13 +99,43 @@ public class PDAgent extends ResourceAgent {
     /*
     Neighbors
      */
+    public boolean isValidNeighborId(int resourceId) {
+        return getNeighborId() == resourceId;
+    }
+
     @Override
     public boolean checkAllNeighborsSet() {
         return neighbor.agentSet();
     }
 
+    @Override
+    public ResourceAgent getNeighborAgent(int resourceId) {
+        if (getNeighborId() == resourceId) {
+            return getNeighborAgent();
+        } else {
+            throw new IllegalArgumentException(
+                    "PD AGENT | THIS AGENT HAS NO NEIGHBOR WITH GIVEN ID"
+            );
+        }
+    }
+
     public int getNeighborId() {
         return getNeighborAgent().getResourceId();
+    }
+
+    @Override
+    public Point getConnectionWithNeighbor(int resourceId)
+            throws IllegalArgumentException {
+        if (! isValidNeighborId(resourceId)) {
+            throw new IllegalArgumentException(
+                    "PD AGENT | THIS AGENT HAS NO NEIGHBOR WITH GIVEN ID"
+            );
+        }
+        return getConnection();
+    }
+
+    public Point getConnection() {
+        return neighbor.getConnection();
     }
 
     public ResourceAgent getNeighborAgent()
@@ -173,8 +201,25 @@ public class PDAgent extends ResourceAgent {
         return feasibilityMAS;
     }
 
+    public Order pickupOrder() {
+        assert(isStorageSpace());
+        RequestManager.getRequestManager().addFreeStorageAgent(this);
+        return getFeasibilityMAS().pickupOrder();
+    }
+
     public void registerOrder(Order order) {
         feasibilityMAS.registerOrder(order);
+    }
+
+    public void showOrder() {
+        getFeasibilityMAS().showOrder();
+    }
+
+    public void acceptOrderDelivery(Order order) {
+        assert(isDeliveryPoint());
+        assert(order.allDestinationsVisited());
+
+        RequestManager.getRequestManager().notifyDeliveredOrder(order);
     }
 
     /*
@@ -183,6 +228,7 @@ public class PDAgent extends ResourceAgent {
     @Override
     public void tick(TimeLapse timeLapse) {
         super.tick(timeLapse);
+        showOrder();
         commManager.checkMessages();
         feasibilityMAS.tick();
     }

@@ -52,6 +52,7 @@ public class ScheduleRequest {
         }
         this.agvId = agvId;
         if (! isValidDestinationId(destinationId)) {
+            System.out.println("Schedule request: destination id " + destinationId);
             throw new IllegalArgumentException(
                     "SCHEDULE REQUEST | GIVEN DESTINATION ID IS NOT A VALID ONE"
             );

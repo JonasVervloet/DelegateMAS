@@ -93,11 +93,6 @@ public class ResourcesCreator {
                     entryx, entryy,
                     createTSectionAgentLeft(matrix, basex, basey)
             );
-            System.out.println("PROBLEM");
-            System.out.println(basex);
-            System.out.println(basey);
-            System.out.println(entryx);
-            System.out.println(entryy);
             resources.setEntry(
                     entryx - 1, entryy,
                     createRoadAgent(matrix, basex - 2, basey, basex - 1, basey)

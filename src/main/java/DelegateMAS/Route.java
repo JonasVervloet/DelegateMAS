@@ -67,21 +67,16 @@ public class Route {
         if (getRouteLength() == 0) {
             return true;
         } else {
-            getLastPossibleReservation().overlapWithNextPossReservation(next);
+            return getLastPossibleReservation().overlapWithNextPossReservation(next);
         }
-        return false;
     }
 
-    private int getRouteLength() {
+    public int getRouteLength() {
         return route.size();
     }
 
     public int getNextEarliestArrival() {
-        if (getRouteLength() == 0) {
-            return 0;
-        } else {
-            return getLastPossibleReservation().getDepartureStart() + 1;
-        }
+        return getLastPossibleReservation().getDepartureStart() + 1;
     }
 
     private PossibleReservation getLastPossibleReservation() {
@@ -101,6 +96,7 @@ public class Route {
 
     public void addRouteSlot(int resourceId, PossibleReservation possRes)
             throws IllegalArgumentException {
+        System.out.println(possRes);
         if (! isValidNextSlot(possRes)) {
             throw new IllegalArgumentException(
                     "ROUTE | THE GIVEN POSSIBLE RESERVATION IS NOT A VALID ONE"
@@ -110,16 +106,18 @@ public class Route {
     }
 
     public void filterPossibleReservations(List<PossibleReservation> possibleReservations) {
-        List<PossibleReservation> toRemove = new ArrayList<>();
-        PossibleReservation last = getLastPossibleReservation();
+        if (getRouteLength() != 0) {
+            List<PossibleReservation> toRemove = new ArrayList<>();
+            PossibleReservation last = getLastPossibleReservation();
 
-        for (PossibleReservation next: possibleReservations) {
-            if (! last.overlapWithNextPossReservation(next)) {
-                toRemove.add(next);
+            for (PossibleReservation next: possibleReservations) {
+                if (! last.overlapWithNextPossReservation(next)) {
+                    toRemove.add(next);
+                }
             }
-        }
 
-        possibleReservations.removeAll(toRemove);
+            possibleReservations.removeAll(toRemove);
+        }
     }
 
     public void cleanRoute() {
@@ -168,7 +166,7 @@ public class Route {
         if (hasReachedAnyCheckpoint()) {
             return newTime > arrivalTime;
         } else {
-            return newTime > 0;
+            return newTime >= 0;
         }
     }
 

@@ -14,19 +14,15 @@ public class AGVManager {
      */
     private Map<Integer, AGVAgent> agvAgents;
 
-    /*
-    Schedule Manager of the resource agents that delegates
-        this AGV Manager. The schedule manager is used to
-        validate registering AGV Agents.
-     */
-    private ScheduleManager scheduleManager;
+    public ResourceAgent agent;
 
 
     /*
     Constructor
      */
-    public AGVManager() {
-        agvAgents = new HashMap<>();
+    public AGVManager(ResourceAgent agent) {
+        this.agvAgents = new HashMap<>();
+        this.agent = agent;
     }
 
 
@@ -73,19 +69,20 @@ public class AGVManager {
     }
 
     /*
-    Schedule Manager
+    Resource Agent
      */
-    private boolean isValidToRegister(AGVAgent agvAgent) {
-        return scheduleManager.isValidToRegister(agvAgent.getAgvId());
+    private int getCurrentTime() {
+        return agent.getCurrentTime();
     }
 
-    public void setScheduleManager(ScheduleManager aScheduleManager)
-            throws NullPointerException {
-        if (aScheduleManager == null) {
-            throw new NullPointerException(
-                    "AGV MANAGER | SETTING A SCHEDULE MANAGER THAT IS EQUAL TO NULL"
-            );
-        }
-        scheduleManager = aScheduleManager;
+    /*
+    Schedule Manager
+     */
+    private ScheduleManager getScheduleManager() {
+        return agent.getScheduleManager();
+    }
+
+    private boolean isValidToRegister(AGVAgent agvAgent) {
+        return getScheduleManager().isValidToRegister(agvAgent.getAgvId(), getCurrentTime());
     }
 }

@@ -12,8 +12,8 @@ public class AbstractAntTest {
 
     @Before
     public void init() {
-        ant1 = new OrderFeasibilityAnt(123);
-        ant2 = new OrderFeasibilityAnt(123);
+        ant1 = new OrderFeasibilityAnt(123, 222);
+        ant2 = new OrderFeasibilityAnt(123, 22);
     }
 
 

@@ -41,6 +41,10 @@ public class PDCommunication extends AbstractCommunicationManager {
     /*
     PD Agent
      */
+    private boolean isStorageAgent() {
+        return agent.isStorageSpace();
+    }
+
     public boolean matchesResourceId(int aResourceId) {
         return aResourceId == getResourceId();
     }
@@ -112,6 +116,16 @@ public class PDCommunication extends AbstractCommunicationManager {
     }
 
     public void makeReservation(int start, int end, int agvId) {
+        ScheduleRequest request = new ScheduleRequest(start, end, agvId, getNeighborId());
+        getScheduleManager().makeReservation(request);
+        if (isStorageAgent() && harborsOrder()) {
+            getFeasibilityMAS().reservePickup(start, agvId);
+        } else {
+            System.out.println("PD communication: reserving at storage agent without order");
+        }
+    }
+
+    public void makeInitialReservation(int start, int end, int agvId) {
         ScheduleRequest request = new ScheduleRequest(start, end, agvId, getNeighborId());
         getScheduleManager().makeReservation(request);
     }

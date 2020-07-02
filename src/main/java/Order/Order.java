@@ -1,8 +1,12 @@
 package Order;
 
+import com.github.rinde.rinsim.core.model.road.RoadModel;
+import com.github.rinde.rinsim.core.model.road.RoadUser;
+import com.github.rinde.rinsim.geom.Point;
+
 import java.util.List;
 
-public class Order {
+public class Order implements RoadUser {
 
     /*
     The ID Counter ensures that every packages
@@ -33,6 +37,16 @@ public class Order {
      */
     private int currentPickupTime;
 
+    /*
+
+     */
+    private int pickupAgvId;
+
+    /*
+
+     */
+    private RoadModel roadModel;
+
 
     /*
     Constructor
@@ -60,24 +74,83 @@ public class Order {
     /*
     Destinations
      */
+    public boolean allDestinationsVisited() {
+        return destinations.size() == 0;
+    }
+
     public List<Integer> getDestinations() {
         return destinations;
+    }
+
+    public void visitDestination(int resourceId) {
+        assert(destinations.get(0) == resourceId);
+        destinations.remove(0);
     }
 
     /*
     Pick Up
      */
+    public boolean hasBeenPickedUp() {
+        return pickedUp;
+    }
+
     public boolean couldPickUp(int pickupTime) {
         return pickupTime < currentPickupTime;
     }
 
     public void pickup() {
-        if (! pickedUp) {
+        if (! hasBeenPickedUp()) {
             pickedUp = true;
         } else {
             throw new IllegalStateException(
                     "ORDER | THIS ORDER HAS ALREADY BEEN PICKED UP"
             );
         }
+    }
+
+    public void reservePickup(int pickupTime, int agvId) {
+        if (pickupTime < currentPickupTime) {
+            currentPickupTime = pickupTime;
+            pickupAgvId = agvId;
+        } else {
+            throw new IllegalArgumentException(
+                    "ORDER | THE GIVEN PICKUP TIME IS NOT GOOD ENOUGH"
+            );
+        }
+    }
+
+    /*
+    Road Model
+     */
+    private RoadModel getRoadModel() {
+        if (roadModel == null) {
+            throw new IllegalStateException(
+                    "ORDER | THIS ORDER HAS NO ROAD MODEL YET"
+            );
+        }
+        return roadModel;
+    }
+
+    public void showAtPosition(Point position) {
+        try {
+            getRoadModel().removeObject(this);
+        } catch (IllegalArgumentException e) {}
+        getRoadModel().addObjectAt(this, position);
+    }
+
+    public void showAtSamePosition(RoadUser user) {
+        try {
+            getRoadModel().removeObject(this);
+        } catch (IllegalArgumentException e) {}
+        getRoadModel().addObjectAtSamePosition(this, user);
+    }
+
+    @Override
+    public void initRoadUser(RoadModel aModel) {
+        roadModel = aModel;
+    }
+
+    public void removeOrder() {
+        getRoadModel().removeObject(this);
     }
 }

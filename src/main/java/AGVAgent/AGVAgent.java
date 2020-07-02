@@ -1,13 +1,18 @@
 package AGVAgent;
 
+import Ant.ExplorationAnt;
 import CommunicationManager.AGVCommunication;
-import CommunicationManager.CommunicationManagerInterface;
 import DelegateMAS.ExplorationMAS;
+import DelegateMAS.IntentionEntry;
 import DelegateMAS.IntentionMAS;
 import Order.Order;
 import ResourceAgent.ResourceAgent;
+import ResourceAgent.PDAgent;
 import com.github.rinde.rinsim.core.model.comm.CommDeviceBuilder;
 import com.github.rinde.rinsim.core.model.comm.CommUser;
+import com.github.rinde.rinsim.core.model.pdp.Vehicle;
+import com.github.rinde.rinsim.core.model.pdp.VehicleDTO;
+import com.github.rinde.rinsim.core.model.time.TimeLapse;
 import com.github.rinde.rinsim.geom.Point;
 import com.google.common.base.Optional;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -317,7 +322,9 @@ import java.util.List;
 //    }
 //}
 
-public class AGVAgent implements CommUser {
+public class AGVAgent extends Vehicle implements CommUser {
+
+    private static double agvSpeed = 2d;
 
     /*
     Counter that is used to give every resource a
@@ -370,18 +377,54 @@ public class AGVAgent implements CommUser {
      */
     private RandomGenerator randomGenerator;
 
+    /*
+    The number of ticks before one time unit passes.
+     */
+    private static int timeAdvancementFrequency = 100;
+
+    /*
+    Counter that counts the number of ticks.
+     */
+    private int tickCounter;
+
+    /*
+    The current destination of this agv agent.
+     */
+    private Point currentDestination;
+
 
     /*
     Constructor
      */
-    public AGVAgent(ResourceAgent firstResource, RandomGenerator randomGenerator) {
+    public AGVAgent(PDAgent firstResource, RandomGenerator randomGenerator) {
+        super(VehicleDTO.builder()
+                .startPosition(firstResource.getConnection())
+                .speed(getAgvSpeed())
+                .build());
+
         this.agvId = next();
         this.explorationMAS = new ExplorationMAS(this);
         this.order = Optional.absent();
         this.currentResource = firstResource;
+        firstResource.getCommunicationManager().makeInitialReservation(
+                getCurrentTime(), ExplorationAnt.getLookAheadTime(),
+                getAgvId());
+        firstResource.registerAgvAgent(this);
+        this.intentionMAS = new IntentionMAS(this,
+                new IntentionEntry(firstResource.getResourceId(),
+                        getCurrentTime(), ExplorationAnt.getLookAheadTime()));
+        this.currentDestination = firstResource.getConnection();
         this.randomGenerator = randomGenerator;
+        this.tickCounter = 0;
     }
 
+
+    /*
+    AGV Speed
+     */
+    private static double getAgvSpeed() {
+        return agvSpeed;
+    }
 
     /*
     AGV ID
@@ -400,7 +443,7 @@ public class AGVAgent implements CommUser {
      */
     @Override
     public Optional<Point> getPosition() {
-        return null;
+        return Optional.of(getRoadModel().getPosition(this));
     }
 
     @Override
@@ -434,11 +477,51 @@ public class AGVAgent implements CommUser {
     }
 
     public Order getOrder() {
+        if (! carriesOrder()) {
+            throw new IllegalStateException(
+                    "AGV AGENT | THIS AGENT DOES NOT CARRY ANY ORDER"
+            );
+        }
         return order.get();
+    }
+
+    private Order deliverOrder() {
+        Order current = getOrder();
+        order = Optional.absent();
+        return current;
     }
 
     public List<Integer> getOrderDestinations() {
         return getOrder().getDestinations();
+    }
+
+    private void visitCheckPoint(ResourceAgent agent) {
+        assert(agent.isPDAgent());
+        PDAgent pdAgent = (PDAgent) agent;
+        if (pdAgent.isStorageSpace()) {
+            assert(! carriesOrder());
+            pickupOrder(pdAgent.pickupOrder());
+        }
+        getOrder().visitDestination(agent.getResourceId());
+        if (pdAgent.isDeliveryPoint()) {
+            assert(getOrder().allDestinationsVisited());
+            pdAgent.acceptOrderDelivery(deliverOrder());
+        }
+    }
+
+    private void pickupOrder(Order newOrder) {
+        if (carriesOrder()) {
+            throw new IllegalStateException(
+                    "AGV AGENT | THIS AGENT IS ALREADY CARRYING A ORDER"
+            );
+        }
+        order = Optional.of(newOrder);
+    }
+
+    private void showOrder() {
+        if (carriesOrder()) {
+            getOrder().showAtSamePosition(this);
+        }
     }
 
     /*
@@ -448,10 +531,100 @@ public class AGVAgent implements CommUser {
         return currentResource;
     }
 
+    private void setCurrentResource(ResourceAgent agent) {
+        currentResource = agent;
+    }
+
     /*
     Random Generator
      */
     public RandomGenerator getRandomGenerator() {
         return randomGenerator;
+    }
+
+    /*
+    Tick
+     */
+    private boolean tickCounterEqualsFrequency() {
+        return getTickCounter() % getTimeAdvancementFrequency() == 0;
+    }
+
+    private static int getTimeAdvancementFrequency() {
+        return timeAdvancementFrequency;
+    }
+
+    private int getTickCounter() {
+        return tickCounter;
+    }
+
+    public int getCurrentTime() {
+        return (getTickCounter() / getTimeAdvancementFrequency());
+    }
+
+    private void incrementTickCounter() {
+        tickCounter += 1;
+    }
+
+    @Override
+    protected void tickImpl(TimeLapse timeLapse) {
+        showOrder();
+        explorationMAS.tick();
+        intentionMAS.tick();
+        incrementTickCounter();
+
+        System.out.println("AGV " + getAgvId() + " move to" + getCurrentDestination());
+        getRoadModel().moveTo(this, getCurrentDestination(), timeLapse);
+        if (tickCounterEqualsFrequency() &&  readyToChangeToNextDestination()) {
+            changeToNextDestination();
+        }
+    }
+
+    private boolean readyToChangeToNextDestination() {
+        return (atNextDestination() &&
+                getIntentionMAS().readyToChangeToNextEntry(getCurrentTime()));
+    }
+
+    /*
+    Current Destination
+     */
+    private boolean atNextDestination() {
+        return getCurrentDestination().equals(getRoadModel().getPosition(this));
+    }
+
+    private Point getCurrentDestination() {
+        return currentDestination;
+    }
+
+    private void changeToNextDestination() {
+        getIntentionMAS().changeToNextDestination();
+
+        if (getIntentionMAS().getNbOfEntries() == 0) {
+            throw new IllegalStateException(
+                    "AGV AGENT | CURRENT INTENTION HAS NO MORE ENTRIES"
+            );
+        } else {
+            // change resource agent
+            int firstId = getIntentionMAS().getIdOfFirstEntry();
+            currentResource.unregisterAgvAgent(getAgvId());
+            setCurrentResource(
+                    getCurrentResource().getNeighborAgent(firstId)
+            );
+            currentResource.registerAgvAgent(this);
+
+            // if resource agent is pd agent, handle checkpoint visit
+            if (currentResource.isPDAgent()) {
+                visitCheckPoint(currentResource);
+            }
+
+            // change destination
+            int secondId = getIntentionMAS().getIdOfSecondEntry();
+            setNextDestination(
+                    getCurrentResource().getConnectionWithNeighbor(secondId)
+            );
+        }
+    }
+
+    private void setNextDestination(Point next) {
+        currentDestination = next;
     }
 }

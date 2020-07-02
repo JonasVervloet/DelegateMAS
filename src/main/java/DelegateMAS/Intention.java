@@ -29,7 +29,12 @@ public class Intention {
     Constructor
      */
     public Intention(int nbOfCheckpoints, int arrivalTime) {
-        entries = new ArrayList<>();
+        this.entries = new ArrayList<>();
+    }
+
+    public Intention(int nbOfCheckpoints, int arrivalTime, IntentionEntry entry) {
+        this(nbOfCheckpoints, arrivalTime);
+        this.entries.add(entry);
     }
 
 
@@ -50,6 +55,10 @@ public class Intention {
 
     public void addEntry(int resourceId, int start, int end) {
         entries.add(new IntentionEntry(resourceId, start, end));
+    }
+
+    public void changToNextDestination() {
+        entries.remove(0 );
     }
 
     /*

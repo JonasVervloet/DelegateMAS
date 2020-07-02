@@ -49,10 +49,10 @@ public abstract class DelegateMAS {
     Tick
      */
     public void tick() {
-        tickCounter += 1;
-        if (tickCounter == actionRate) {
+        if (tickCounter % actionRate == 0) {
             tickCounter = 0;
             takeAction();
         }
+        tickCounter += 1;
     }
 }
