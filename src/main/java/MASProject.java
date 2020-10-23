@@ -1,9 +1,6 @@
-import Order.RequestManager;
-import ResourceAgent.ResourceAgent;
-import ResourceAgent.PDAgent;
-import AGVAgent.AGVAgent;
 import AGVAgent.SimpleAGVAgent;
 
+import Order.SimpleOrder;
 import com.github.rinde.rinsim.core.model.comm.CommModel;
 import com.github.rinde.rinsim.core.Simulator;
 import com.github.rinde.rinsim.core.model.pdp.DefaultPDPModel;
@@ -22,8 +19,6 @@ import javax.measure.unit.SI;
 import Environment.Environment;
 import Environment.EnvironmentCreator;
 
-import java.util.List;
-
 /**
  * Example showcasing the {@link CollisionGraphRoadModelImpl} with a
  * {@link WarehouseRenderer} and {@link AGVRenderer}.
@@ -31,19 +26,21 @@ import java.util.List;
  */
 public class MASProject {
 
-    public static final double VEHICLE_LENGTH = 2d;
+    private static final double VEHICLE_LENGTH = 2d;
 
     private static final int NUM_PROD = 2;
 
     private static final long SERVICE_DURATION = 60000;
 
-    private static int modelsize = 2;
+    private static int modelSize = 1;
 
     private static int nbAGVs = 1;
 
-    private static int orderrate = 30;
+    private static int nbOrders = 5;
 
-    public static int MACHINE_WORKTIME = 5;
+    private static int orderRate = 30;
+
+    public static int MACHINE_WORK_TIME = 5;
 
     public static boolean DEBUG = false;
 
@@ -58,7 +55,7 @@ public class MASProject {
         run(false);
     }
 
-    public static void run(boolean testing) {
+    private static void run(boolean testing) {
         View.Builder viewBuilder = View.builder()
                 .withTitleAppendix("MAS Project")
                 .with(WarehouseRenderer.builder()
@@ -66,7 +63,9 @@ public class MASProject {
                 .with(AGVRenderer.builder())
                 .with(RoadUserRenderer.builder());
 
-        Environment env = EnvironmentCreator.createEnvironment(modelsize, VEHICLE_LENGTH);
+        Environment env = EnvironmentCreator.createEnvironment(
+                modelSize, VEHICLE_LENGTH
+        );
         assert(env.checkAllNeighborsSet());
 
         final Simulator sim = Simulator.builder()
@@ -115,6 +114,18 @@ public class MASProject {
             sim.register(agent);
         }
 
+        for (int i = 0; i < nbOrders; i++) {
+            Point startPosition = roadModel.getRandomPosition(ran);
+            Point destination = roadModel.getRandomPosition(ran);
+            SimpleOrder order = new SimpleOrder(startPosition, destination);
+            sim.register(order);
+        }
+
+        System.out.println(
+                sim.getModelProvider()
+                    .getModel(PDPModel.class)
+                    .getParcels()
+        );
         sim.start();
     }
 }
