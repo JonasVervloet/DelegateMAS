@@ -11,6 +11,8 @@ import com.github.rinde.rinsim.core.model.time.TimeLapse;
 import com.github.rinde.rinsim.geom.Point;
 import com.google.common.base.Optional;
 
+import javax.swing.text.html.Option;
+
 /*
 A simple order. This order has a destination that it
     should reach. An AGV agent will have to pick up
@@ -37,25 +39,54 @@ public class SimpleOrder extends Parcel implements CommUser, TickListener {
                 ).serviceDuration(20)
                 .buildDTO()
         );
+        setEmptyCommunicationDevice();
     }
 
     /*
     Parcel
      */
+    private boolean isInAvailableState() {
+        return getOrderState() == PDPModel.ParcelState.AVAILABLE;
+    }
+
     private PDPModel.ParcelState getOrderState() {
         return getPDPModel().getParcelState(this);
     }
 
 
     /*
-    Communication Device
+    Communication User
      */
     private boolean hasCommunicationDevice() {
         return communicationDevice.isPresent();
     }
 
+    @Override
+    public Optional<Point> getPosition() {
+        if (isInAvailableState()) {
+            return Optional.of(
+                    getRoadModel().getPosition(this)
+            );
+        } else {
+            return Optional.absent();
+        }
+    }
+
     private CommDevice getCommunicationDevice() {
         return communicationDevice.get();
+    }
+
+    private void setEmptyCommunicationDevice() {
+        this.communicationDevice = Optional.absent();
+    }
+
+    @Override
+    public void setCommDevice(CommDeviceBuilder commDeviceBuilder) {
+        this.communicationDevice = Optional.of(
+                commDeviceBuilder
+                        .setMaxRange(10)
+                        .build()
+        );
     }
 
     private void sendBroadcastMessage() {
@@ -69,30 +100,11 @@ public class SimpleOrder extends Parcel implements CommUser, TickListener {
     }
 
     /*
-    Communication User
-     */
-    @Override
-    public Optional<Point> getPosition() {
-        return Optional.of(
-                getRoadModel().getPosition(this)
-        );
-    }
-
-    @Override
-    public void setCommDevice(CommDeviceBuilder commDeviceBuilder) {
-        this.communicationDevice = Optional.of(
-                commDeviceBuilder
-                        .setMaxRange(10)
-                        .build()
-        );
-    }
-
-    /*
     Tick Listener
      */
     @Override
     public void tick(TimeLapse timeLapse) {
-        if (getOrderState() == PDPModel.ParcelState.AVAILABLE) {
+        if (isInAvailableState()) {
             sendBroadcastMessage();
         }
     }
