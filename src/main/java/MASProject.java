@@ -76,7 +76,9 @@ public class MASProject {
                         .withVehicleLength(VEHICLE_LENGTH)
                         .withSpeedUnit(SI.METERS_PER_SECOND)
                 )
-                .addModel(DefaultPDPModel.builder())
+                .addModel(
+                        DefaultPDPModel.builder()
+                )
                 .addModel(viewBuilder)
                 .addModel(CommModel.builder())
                 .setTimeUnit(SI.MILLI(SI.SECOND))
