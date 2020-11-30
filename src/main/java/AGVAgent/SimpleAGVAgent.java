@@ -24,7 +24,7 @@ A simple AGV agent. This agent chooses a destination
     destination is reached, the agent selects a new
     destination, again at random.
  */
-public class SimpleAGVAgent extends Vehicle implements CommUser {
+public class SimpleAGVAgent extends OrderManagerUser implements CommUser {
 
     /*
     Speed of the AGV agent. Currently all agents
@@ -165,10 +165,6 @@ public class SimpleAGVAgent extends Vehicle implements CommUser {
                 }
             }
 
-            System.out.println(
-                    "SETTING ORDER DESTINATION: "
-                            + currentBestDestination.toString()
-            );
             setDestination(currentBestDestination);
         }
     }
@@ -196,6 +192,10 @@ public class SimpleAGVAgent extends Vehicle implements CommUser {
         return destination.isPresent();
     }
 
+    private boolean isAtDestination() {
+        return getRoadModel().containsObjectAt(this, getDestination());
+    }
+
     private Point getDestination() {
         return destination.get();
     }
@@ -204,9 +204,9 @@ public class SimpleAGVAgent extends Vehicle implements CommUser {
         this.destination = Optional.absent();
     }
 
-    private void generateNewDestination(RoadModel roadModel) {
+    private void generateNewDestination() {
         setDestination(
-                roadModel.getRandomPosition(
+                getRoadModel().getRandomPosition(
                         getRandomGenerator()
                 )
         );
@@ -216,6 +216,12 @@ public class SimpleAGVAgent extends Vehicle implements CommUser {
         this.destination = Optional.of(aDestination);
     }
 
+    private void move(TimeLapse timeLapse) {
+        getRoadModel().moveTo(
+                this, getDestination(), timeLapse
+        );
+    }
+
     /*
     Order
      */
@@ -223,17 +229,27 @@ public class SimpleAGVAgent extends Vehicle implements CommUser {
         return order.isPresent();
     }
 
+    private boolean ordersAtLocation() {
+        return getOrdersAtLocation()
+                .size() > 0;
+    }
+
     private SimpleOrder getOrder() {
         return order.get();
     }
 
-    private SimpleOrder selectOrder(Set<SimpleOrder> orders) {
+    private SimpleOrder selectOrder() {
         SimpleOrder result = null;
-        for (SimpleOrder order: orders) {
+        for (SimpleOrder order: getOrdersAtLocation()) {
             result = order;
             break;
         }
         return result;
+    }
+
+    private Set<SimpleOrder> getOrdersAtLocation() {
+        return getRoadModel()
+                .getObjectsAt(this, SimpleOrder.class);
     }
 
     private void setEmptyOrder() {
@@ -244,37 +260,42 @@ public class SimpleAGVAgent extends Vehicle implements CommUser {
         this.order = Optional.of(anOrder);
     }
 
+    private void pickUpOrder(SimpleOrder order, TimeLapse timeLapse) {
+        dumpUnreadMessages();
+        getOrderManager().pickUpOrder();
+        getPDPModel().pickup(this, order, timeLapse);
+        setOrder(order);
+        setDestination(
+                getOrder().getDeliveryLocation()
+        );
+    }
+
+    private void deliverOrder(TimeLapse timeLapse) {
+        getOrderManager().deliverOrder();
+        getPDPModel().deliver(this, getOrder(), timeLapse);
+        setEmptyOrder();
+        setEmptyDestination();
+    }
+
     /*
     Tick Listener
      */
     @Override
     protected void tickImpl(TimeLapse timeLapse) {
-        final RoadModel roadModel = getRoadModel();
-        final PDPModel pdpModel = getPDPModel();
-
         while (timeLapse.hasTimeLeft()) {
-
             if (! hasOrder()) {
-                Set<SimpleOrder> ordersAtLocation = roadModel.getObjectsAt(this, SimpleOrder.class);
-                if (ordersAtLocation.size() > 0) {
-                    dumpUnreadMessages();
-                    System.out.println("Pickup new order!");
-                    SimpleOrder newOrder = selectOrder(ordersAtLocation);
-                    pdpModel.pickup(this, newOrder, timeLapse);
-                    setOrder(newOrder);
-                    setDestination(
-                            getOrder().getDeliveryLocation()
+                if (ordersAtLocation()) {
+                    pickUpOrder(
+                            selectOrder(), timeLapse
                     );
                 } else {
                     readMessages();
                     if (! hasDestination()) {
                         System.out.println("Generate new random destination!");
-                        generateNewDestination(roadModel);
+                        generateNewDestination();
                     } else {
-                        if (! roadModel.containsObjectAt(this, getDestination())) {
-                            roadModel.moveTo(
-                                    this, getDestination(), timeLapse
-                            );
+                        if (! isAtDestination()) {
+                            move(timeLapse);
                         } else {
                             System.out.println("Setting empty destination!");
                             setEmptyDestination();
@@ -283,15 +304,10 @@ public class SimpleAGVAgent extends Vehicle implements CommUser {
                 }
             } else {
                 dumpUnreadMessages();
-                if (! roadModel.containsObjectAt(this, getDestination())) {
-                    roadModel.moveTo(
-                            this, getDestination(), timeLapse
-                    );
+                if (! isAtDestination()) {
+                    move(timeLapse);
                 } else {
-                    System.out.println("Deliver order!");
-                    pdpModel.deliver(this, getOrder(), timeLapse);
-                    setEmptyOrder();
-                    setEmptyDestination();
+                    deliverOrder(timeLapse);
                 }
             }
         }
