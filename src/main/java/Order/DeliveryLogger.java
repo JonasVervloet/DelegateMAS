@@ -1,9 +1,7 @@
 package Order;
 
-import com.github.rinde.rinsim.core.model.pdp.ForwardingPDPModel;
-import com.github.rinde.rinsim.core.model.pdp.PDPModel;
-import com.github.rinde.rinsim.core.model.pdp.Parcel;
-import com.github.rinde.rinsim.core.model.pdp.Vehicle;
+import com.github.rinde.rinsim.core.model.DependencyProvider;
+import com.github.rinde.rinsim.core.model.road.RoadModel;
 import com.github.rinde.rinsim.core.model.time.TimeLapse;
 
 /*
@@ -11,10 +9,10 @@ A PDP Model decorator that keeps track of how many orders
     are delivered within the model and prints that number
     every time a order is delivered.
  */
-public class DeliveryLogger extends ForwardingPDPModel {
+public class DeliveryLogger extends OrderManagerDecorator {
 
     /*
-    The number of orders that where deliverd within
+    The number of orders that where delivered within
         this PDP model.
      */
     int deliveredOrders;
@@ -23,7 +21,7 @@ public class DeliveryLogger extends ForwardingPDPModel {
     /*
     Constructor
      */
-    public DeliveryLogger(PDPModel delegate) {
+    public DeliveryLogger(OrderManager delegate) {
         super(delegate);
         deliveredOrders = 0;
     }
@@ -44,8 +42,14 @@ public class DeliveryLogger extends ForwardingPDPModel {
     PDP Model
      */
     @Override
-    public void deliver(Vehicle vehicle, Parcel parcel, TimeLapse time) {
-        super.deliver(vehicle, parcel, time);
+    public void pickUpOrder() {
+        super.pickUpOrder();
+        System.out.println("ORDER PICKUP");
+    }
+
+    @Override
+    public void deliverOrder() {
+        super.deliverOrder();
         incrementDeliveredOrders();
         System.out.println("DELIVERY");
         System.out.println(String.format(

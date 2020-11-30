@@ -1,5 +1,8 @@
+import AGVAgent.OrderManagerUser;
 import AGVAgent.SimpleAGVAgent;
 
+import Order.OrderManager;
+import Order.OrderManagerBuilder;
 import Order.SimpleOrder;
 import com.github.rinde.rinsim.core.model.comm.CommModel;
 import com.github.rinde.rinsim.core.Simulator;
@@ -44,6 +47,7 @@ public class MASProject {
 
     public static boolean DEBUG = false;
 
+    private static OrderManager ORDER_MANAGER;
 
     private MASProject() {}
 
@@ -102,6 +106,12 @@ public class MASProject {
 //                orderrate, sim);
 //        sim.register(RequestManager.getRequestManager());
 
+        OrderManagerUser.setOrderManager(
+                new OrderManagerBuilder()
+                    .addDeliveryLogger()
+                    .build()
+        );
+
 //        for (int i = 0; i < nbAGVs; i++) {
 //            PDAgent start = storageAgents.get(ran.nextInt(storageAgents.size()));
 //            System.out.println(start.getConnection());
@@ -129,5 +139,13 @@ public class MASProject {
                     .getParcels()
         );
         sim.start();
+    }
+
+    public static OrderManager getOrderManager() {
+        return ORDER_MANAGER;
+    }
+
+    private static void setOrderManager(OrderManager anOrderManager) {
+        ORDER_MANAGER = anOrderManager;
     }
 }
